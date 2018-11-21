@@ -17,6 +17,9 @@ CarMove movePool[CARMOVE_POOL_LEN];
 
 static int carMovePoolTop = 0;
 
+
+static int xixixi = 0;
+
 Edge getEdge(int a, int b, int w)
 {
     Edge tempEdge;
