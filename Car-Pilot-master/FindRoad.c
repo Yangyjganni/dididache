@@ -12,6 +12,7 @@ const short SHORT_INF = (short)0x0f0f;
 
 short edgeMap[max_points_num + 1][max_points_num + 1];
 
+static int hahahaTest = 0;
 
 CarMove movePool[CARMOVE_POOL_LEN];
 
