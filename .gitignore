@@ -24,7 +24,9 @@
 *.[Ii]
 *.LST
 *.lst
+*.sct
 *.MAP
+*.axf
 *.map
 *.[Mm]51
 *.[Mm]66
