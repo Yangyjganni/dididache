@@ -17,6 +17,7 @@
 *.obj
 *.OBJ
 *.crf
+*.map
 
 # Listing Files
 *.COD
