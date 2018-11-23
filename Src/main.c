@@ -44,7 +44,7 @@
 #include <math.h>
 #include "FindRoad.h"
 #include "decodemessage.h"
-
+#include "utils.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -95,8 +95,6 @@ volatile uint8_t pirefreshed=0;
 uint8_t fre=10;  //锟斤拷锟斤拷锟斤拷频锟斤拷
 volatile int leftu=0,rightu=0;  //锟斤拷前锟劫讹拷(pwm锟斤拷示)
 
-
-
 struct _vector{
 	int x,y;
 	float angle;  //degree
@@ -119,8 +117,9 @@ float cal_vecangle(vector* a){
 	return a->angle;
 }
 
-float cal_myangle(int* x,int* y,int maxn){
+short cal_myangle(int* x,int* y,int maxn){
 	//(-180,180]
+	short _angle;
 	int xi=0,x2=0,yi=0,xy=0;
 	float k;
 	for(int i = 0; i < maxn; i++){
@@ -132,14 +131,17 @@ float cal_myangle(int* x,int* y,int maxn){
 	if (xi * xi - x2 * maxn==0) return 90;
 	else{
 		k = (yi * xi - xy * maxn)*1.0 / (xi * xi - x2 * maxn);
-		printf("\nk=%f\n",k);
-		printf("\natan(k)=%f",atan(k));
-		if (x[0]-x[maxn-1]>=0) return atan(k)*180/3.1416;
+		//printf("\nk=%f\n",k);
+		//printf("\natan(k)=%f",atan(k));
+		if (x[0]-x[maxn-1]>=0) _angle = atan(k)*180/3.1416;
 		else{
-			if (y[0]-y[maxn-1]>=0) return atan(k)*180/3.1416 + 180;
-			else return atan(k)*180/3.1416 - 180;
+			if (y[0]-y[maxn-1]>=0) _angle = atan(k)*180/3.1416 + 180;
+			else _angle = atan(k)*180/3.1416 - 180;
 		}
 	}
+	if(_angle >= 360) _angle-= 360;
+	else if(_angle < 0) _angle+= 360;
+	return _angle;
 }
 
 void go(uint8_t l,uint8_t r){
@@ -275,7 +277,8 @@ void InitMPU6050()
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	InitMPU6050();
+	setInitHandle(&huart3);
+	//InitMPU6050();
 	MessageInfo* message=(MessageInfo*)malloc(sizeof(MessageInfo));
 	CarMove* carmove=(CarMove*)malloc(sizeof(CarMove));
 	uint8_t isA=(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_2)?1:0);
@@ -324,7 +327,7 @@ int main(void)
 	uint8_t a[]="--This is a test message.--\r\n";
 	printf("%s",a);  //send a test message
 	HAL_UART_Receive_IT(&huart1,pitext,4);
-	/*
+	
 	HAL_UART_Transmit(&huart3,"AT\r\n",4,100);
 	HAL_UART_Transmit(&huart2,"AT\r\n",4,100);
 	HAL_Delay(3000);
@@ -336,13 +339,13 @@ int main(void)
 	HAL_UART_Transmit(&huart2,"AT+RST\r\n",8,100);
 	HAL_UART_Transmit(&huart3,"AT+RST\r\n",8,100);
 	HAL_Delay(3000);
-	*/
+	
 	HAL_UART_Transmit(&huart2,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
 	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
 	HAL_Delay(5000);
 	
-  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.105\",20000\r\n",41,100);
-	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.105\",20000\r\n",41,100);
+  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.100\",20000\r\n",41,100);
+	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.100\",20000\r\n",41,100);
 	HAL_Delay(3000);
 	
   HAL_TIM_Base_Start_IT(&htim1);
@@ -402,11 +405,22 @@ int main(void)
 			y[0]=message->my_y;
 			
 			short _angle;
-			_angle=(short)myvector->angle;
-			if(_angle >=360) angle-=360;
-			else if(_angle <0) angle+=360;
+			uint8_t maxn=4;
+			while(x[maxn]==0) maxn--;
+			maxn++;
+			if (maxn==0||maxn==1) _angle = -1;
+			else _angle = cal_myangle(x,y,maxn);
+			_angle=-1;
 			*carmove=GetNextMoveWithAngle(*message,_angle);
-			
+			if (carmove->type==0){
+				printf("type=0");
+			}
+			if (carmove->type==1){
+				printf("type=1 x=%d y=%d dis=%f  mm",carmove->dest_x,carmove->dest_y, carmove->dis);
+			}
+			if (carmove->type==2){
+				printf("type=2 angle=%d dis=%f mm",carmove->angle, carmove->dis);
+			}
 			//carmove->type=1;
 			if (carmove->type==0){
 				go(0,0);
@@ -434,60 +448,25 @@ int main(void)
 					for (int i=0;i<5;i++){
 						x[i]=0;y[i]=0;
 					}
-				}
-
-				desvector->x = carmove->dest_x - message->my_x;
-				desvector->y = carmove->dest_y - message->my_y;
-				cal_vecangle(desvector);	
-				uint8_t maxn=4;
-				while(x[maxn]==0) maxn--;
-				maxn++;
-				if (maxn==1) myvector->angle = desvector->angle;
-				else myvector->angle = cal_myangle(x,y,maxn);
-				angle_error = myvector->angle - desvector->angle;
-				if (angle_error<=-180) angle_error+=360;
-				if (angle_error>180) angle_error-=360;
-				printf("myangle=%f\ndesangle=%f\nerror=%f\n\n",myvector->angle,desvector->angle,angle_error);
-				
-				if (abs(angle_error)==0||carmove->r<10){
-					go(98,100);
-				}
-				else if ((angle_error>0)&&(angle_error<=5)){  
-					go(98,95);
-				}
-				else if ((angle_error<0)&&(angle_error>=-5)){ 
-					go(93,100);
-				}
-				else if ((angle_error>5)&&(angle_error<=15)){ 
-					go(98,85);
-				}
-				else if ((angle_error<-5)&&(angle_error>=-15)){ 
-					go(83,100);
-				}
-				else if (angle_error>15){
-					go(100,70);
-				}
-				else if(angle_error<-15){
-					go(70,100);
-				}
+				}			
 			}
 
 			if(carmove->type==2)//turning without camera
 			{
 				//value
-				float type2_feedback=1.0;
+				float type2_feedback=1.4;
 				double type2_angle=0;
-				int type2_radius1=10;
-				int type2_radius2=20;
+				int type2_radius1=15;
+				int type2_radius2=28;
 				int type2_a,type2_b;
 				//radius
-				if(carmove->r<type2_radius1) {type2_a=10; type2_b=90;}
-				else if(carmove->r>type2_radius1) {type2_a=70; type2_b=100;}
-				else {type2_a=40; type2_b=90;}
+				if(carmove->r<type2_radius1) {type2_a=30; type2_b=98;}
+				else if(carmove->r>type2_radius1) {type2_a=55; type2_b=98;}
+				else {type2_a=85; type2_b=98;}
 				//angle
 				type2_angle=0;
 				if(carmove->angle>=0){
-					go(type2_a,type2_b);
+					go(type2_b,type2_a);
 					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
@@ -496,7 +475,7 @@ int main(void)
 					}
 				}
 				else {
-					go(type2_b,type2_a);
+					go(type2_a,type2_b);
 					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
@@ -510,13 +489,12 @@ int main(void)
 			
 			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
 			{
-				int x[5],y[5];
 				int8_t i,max_i=-1; //max_i表示在x和y数组中存储了数据的最大下标
-				/*for(i=0;i<=4;i++){
+				for(i=0;i<=4;i++){
 					x[i]=0; y[i]=0;
-				}*/
-				#define SLOWWHEELSPEED 70
-				#define FASTWHEELSPEED 100
+				}
+				#define SLOWWHEELSPEED 83
+				#define FASTWHEELSPEED 98
 				//快轮、慢轮默认转速（调参决定）
 				//#define ABS_MINUS(a,b) (((a)>=(b))?((a)-(b)):((b)-(a)))
 				#define POWER2(x) ((x)*(x))
@@ -531,6 +509,7 @@ int main(void)
 					while(message->my_x<=116)
 					{
 						if(0==refreshed)continue;
+						msgrefresh((char*)text,message,isA);
 						refreshed=0;
 						for(i=4;i>0;i--){
 							x[i]=x[i-1];
@@ -539,13 +518,15 @@ int main(void)
 						if(max_i<4) max_i++;
 						x[0]=message->my_x;
 						y[0]=message->my_y;
-						if(max_i>=1) myvector->angle=cal_myangle(x,y,max_i);
-						
+											
 						if(4*x[0]+3*y[0] >= 1090) //进入第二段圆弧
 						{
 							center_x=115;
 							center_y=210;
 							max_i=-1; //重新记录行驶途中各点
+							for(i=0;i<=4;i++){
+								x[i]=0; y[i]=0;
+							}	
 						}
 						
 						average_offset=0.0;
@@ -591,9 +572,10 @@ int main(void)
 					center_x=210; center_y=115;
 					go(FASTWHEELSPEED,SLOWWHEELSPEED);
 					
-					while(message->my_x<=116)
+					while(message->my_y>=58)
 					{
 						if(0==refreshed)continue;
+						msgrefresh((char*)text,message,isA);
 						refreshed=0;
 						for(i=4;i>0;i--){
 							x[i]=x[i-1];
@@ -609,6 +591,9 @@ int main(void)
 							center_x=290;
 							center_y=55;
 							max_i=-1; //重新记录行驶途中各点
+							for(i=0;i<=4;i++){
+								x[i]=0; y[i]=0;
+							}
 						}
 						
 						average_offset=0.0;
