@@ -59,7 +59,7 @@ void testDecodeMessage()
 {
     MessageInfo msg;
     CarMove move;
-    while(1) {
+    if(1) {
         msg.my_x = 214, msg.my_y = 183;
         msg.oppo_x = 0, msg.oppo_y = 0;
         msg.passengerNum = 2;

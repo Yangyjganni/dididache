@@ -8,6 +8,8 @@
 #include <math.h>
 #include <stdlib.h>
 
+#define MIN_DIS 5
+
 const short SHORT_INF = (short)0x0f0f;
 
 short edgeMap[max_points_num + 1][max_points_num + 1];
@@ -37,7 +39,7 @@ EdgeList initEdgeList(int num)
     EdgeList tempList;
 		static int edgePoolTop = 0;
 #ifdef PRINT_INFO
-		printf("prepare to malloc %d Edge total %d Bytes \n", num, num * sizeof(Edge) );
+		printf("prepare to malloc %d Edge total %lu Bytes \n", num, num * sizeof(Edge) );
 #endif
     tempList.data = (Edge*)malloc(num * sizeof(Edge));
     tempList.num = num;
@@ -60,7 +62,7 @@ MoveList initMoveList(int num)
 {
     MoveList tempList;
 	#ifdef PRINT_INFO
-		printf("prepare to malloc %d of CarMove", num);
+		printf("prepare to malloc %d of CarMove \n", num);
 	#endif
 		//carMovePoolTop = 0;
 		tempList.data = movePool + carMovePoolTop;
@@ -75,7 +77,7 @@ void deleteMoveList(MoveList *moveList)
 {
     if(moveList) {
 #ifdef PRINT_INFO
-		
+
 #endif
         if(moveList->data)
             //free(moveList->data);
@@ -195,6 +197,39 @@ void computeIntersection(float x1, float y1, float angle1, float x2, float y2, f
     *point_y = y1 + s1 * t;
 }
 
+
+/**
+ * 判断从(x1, y1)到(x2, y2)是否是type3的carmove，即运动前后车头方向不变，运动轨迹平移
+ * @param x1
+ * @param y1
+ * @param x2
+ * @param y2
+ * @return
+ */
+int isType3Move(int x1, int y1, int x2, int y2)
+{
+    if(getDis(x1, y1, points_x[47], points_y[47]) < MIN_DIS && getDis(x2, y2, points_x[18], points_y[18]) < MIN_DIS)
+        return 1;
+    if(getDis(x1, y1, points_x[37], points_y[37]) < MIN_DIS && getDis(x2, y2, points_x[46], points_y[46]) < MIN_DIS)
+        return 1;
+    return 0;
+}
+
+/**
+ * 判断从(x1, y1)到(x2, y2)是否是type=4的进入环岛动作
+ * @param x1
+ * @param y1
+ * @param x2
+ * @param y2
+ * @return 1为是 0为非
+ */
+int isRoundAbout(int x1, int y1, int x2, int y2)
+{
+    if(getDis(x1, y1, points_x[5], points_y[5]) < MIN_DIS || getDis(x1, y1, points_x[6], points_y[6]) < MIN_DIS || getDis(x1, y1, points_x[7], points_y[7]) < MIN_DIS)
+        return 1;
+    return 0;
+}
+
 CarMove coreGetCarMove(int x1, int y1, int x2, int y2, short angle1, short angle2)
 {
     short delta_angle = angle2 - angle1, turn_angle = 0;
@@ -204,7 +239,9 @@ CarMove coreGetCarMove(int x1, int y1, int x2, int y2, short angle1, short angle
     //
     if(delta_angle % 180 == 0) {
         if(delta_angle == 0) {
-            moveType = 1;
+            if(isType3Move(x1, y1, x2, y2))
+                moveType = 3;
+            else moveType = 1;
             moveDis = EuclideanDis(x1, y1, x2, y2);
         }
         else {
@@ -248,6 +285,8 @@ CarMove coreGetCarMove(int x1, int y1, int x2, int y2, short angle1, short angle
         turn_r = EuclideanDis(x1, y1, x2, y2) / 2;
         moveType = 2;
     }
+    if(isRoundAbout(x1, y1, x2, y2))
+        moveType = 4;
     CarMove carMove;
     carMove.angle = turn_angle; carMove.dis = moveDis; carMove.r = turn_r; carMove.type = moveType;
     carMove.dest_x = x2; carMove.dest_y = y2;
@@ -268,14 +307,14 @@ CarMove getCarMoveFromPoints(int point1, int point2)
     return coreGetCarMove(x1, y1, x2, y2, angle1, angle2);
 }
 
-#define MIN_DIS 5
+
 
 MoveList find_road(int st_x, int st_y, int ed_x, int ed_y)
 {
 #ifdef PRINT_INFO
-		printf("begin find_road\n");
-#endif  
-		int be_edge_index = use_map[st_x][st_y], ed_edge_index = use_map[ed_x][ed_y];
+		printf("begin find_road \n");
+#endif
+	int be_edge_index = use_map[st_x][st_y], ed_edge_index = use_map[ed_x][ed_y];
     int s1 = e_ed[be_edge_index - 1], s2 = e_be[ed_edge_index - 1];
     int haveFirstMove = 0, haveLastMove = 0;
     short angle1, angle2;
@@ -303,16 +342,16 @@ MoveList find_road(int st_x, int st_y, int ed_x, int ed_y)
             lastMove = coreGetCarMove(points_x[s2 - 1], points_y[s2 - 1], ed_x, ed_y, points_angle[s2 - 1], angle2);
         }
 #ifdef PRINT_INFO
-				printf("prepare dijkstra");
+				printf("prepare dijkstra \n");
 #endif
         EdgeList edgeList = dijkstra(s1, s2);
-				#ifdef PRINT_INFO
-				printf("prepare to init MoveList\n");
-				#endif
+#ifdef PRINT_INFO
+        printf("prepare to init MoveList \n");
+#endif
         moveList = initMoveList(edgeList.num + haveFirstMove + haveLastMove);
-				#ifdef PRINT_INFO
-				printf("after initMoveList");
-				#endif
+#ifdef PRINT_INFO
+		printf("after initMoveList \n");
+#endif
         if (haveFirstMove == 1)
             moveList.data[0] = firstMove;
         if (haveLastMove == 1)
@@ -320,9 +359,9 @@ MoveList find_road(int st_x, int st_y, int ed_x, int ed_y)
         for (int i = 0; i < edgeList.num; ++i) {
             moveList.data[i + haveFirstMove] = getCarMoveFromPoints(edgeList.data[i].a, edgeList.data[i].b);
         }
-				#ifdef PRINT_INFO
-				printf("before delete EdgeList");
-				#endif
+#ifdef PRINT_INFO
+		printf("before delete EdgeList \n");
+#endif
         deleteEdgeList(&edgeList);
     }
 		
@@ -332,18 +371,18 @@ MoveList find_road(int st_x, int st_y, int ed_x, int ed_y)
 CarMove get_next_move(int st_x, int st_y, int ed_x, int ed_y)
 {
 #ifdef PRINT_INFO
-		printf("begin get_next_move");
+		printf("begin get_next_move \n");
 #endif
     MoveList moveList = find_road(st_x, st_y, ed_x, ed_y);
 #ifdef PRINT_INFO
-		printf("after find_road");
+		printf("after find_road \n");
 #endif
 
     if(moveList.num > 0) {
         CarMove carMove = moveList.data[0];
         deleteMoveList(&moveList);
 #ifdef PRINT_INFO
-			printf("after delete moveList\n");
+			printf("after delete moveList \n");
 #endif
         return carMove;
     }
@@ -389,7 +428,7 @@ CarMove GetNextMove(MessageInfo info)
             }
         }
 #ifdef PRINT_INFO
-				printf("before get_next_move\n");
+				printf("before get_next_move \n");
 #endif
         return get_next_move(info.my_x, info.my_y, info.xs_pos[targetPass], info.ys_pos[targetPass]);
 
