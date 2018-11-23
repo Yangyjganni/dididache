@@ -394,10 +394,103 @@ int main(void)
 			if (carmove->type==0){
 				go(0,0);
 			}
-<<<<<<< HEAD
-			if (carmove->type==2){
-				printf("type=2 angle=%d dis=%f mm",carmove->angle, carmove->dis);
+			if (carmove->type==1){  //go straight
+				if (delta>=0){
+					leftv = leftV - delta*0.08;
+					rightv = rightV - delta*0.08 - delta*0.1;
+				}
+				else{
+					leftv = leftV + delta*0.08 + delta*0.1;
+					rightv = rightV + delta*0.08;
+				}
+				//printf("leftv=%d rightv=%d",leftv,rightv);
+				leftpwm = leftv + (leftv - leftu)*0.5;
+				rightpwm = rightv + (rightv - rightu)*0.5;
+				if (leftpwm>100) leftpwm=100;
+				if (leftpwm<30) leftpwm=30;
+				if (rightpwm>100) rightpwm=100;
+				if (rightpwm<30) rightpwm=30;
+				//printf("leftpwm=%d rightpwm=%d",leftpwm,rightpwm);
+				go(leftpwm,rightpwm);
+				//calculate angle
+				if (pretype!=1){
+					for (int i=0;i<5;i++){
+						x[i]=0;y[i]=0;
+					}
+				}
+
+				desvector->x = carmove->dest_x - message->my_x;
+				desvector->y = carmove->dest_y - message->my_y;
+				cal_vecangle(desvector);	
+				uint8_t maxn=4;
+				while(x[maxn]==0) maxn--;
+				maxn++;
+				if (maxn==1) myvector->angle = desvector->angle;
+				else myvector->angle = cal_myangle(x,y,maxn);
+				angle_error = myvector->angle - desvector->angle;
+				if (angle_error<=-180) angle_error+=360;
+				if (angle_error>180) angle_error-=360;
+				printf("myangle=%f\ndesangle=%f\nerror=%f\n\n",myvector->angle,desvector->angle,angle_error);
+				
+				if (abs(angle_error)==0||carmove->r<10){
+					go(98,100);
+				}
+				else if ((angle_error>0)&&(angle_error<=5)){  
+					go(98,95);
+				}
+				else if ((angle_error<0)&&(angle_error>=-5)){ 
+					go(93,100);
+				}
+				else if ((angle_error>5)&&(angle_error<=15)){ 
+					go(98,85);
+				}
+				else if ((angle_error<-5)&&(angle_error>=-15)){ 
+					go(83,100);
+				}
+				else if (angle_error>15){
+					go(100,70);
+				}
+				else if(angle_error<-15){
+					go(70,100);
+				}
 			}
+
+			if(carmove->type==2)//turning without camera
+			{
+				//value
+				float type2_feedback=1.0;
+				double type2_angle=0;
+				int type2_radius1=10;
+				int type2_radius2=20;
+				int type2_a,type2_b;
+				//radius
+				if(carmove->r<type2_radius1) {type2_a=10; type2_b=90;}
+				else if(carmove->r>type2_radius1) {type2_a=70; type2_b=100;}
+				else {type2_a=40; type2_b=90;}
+				//angle
+				type2_angle=0;
+				if(carmove->angle>=0){
+					go(type2_a,type2_b);
+					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
+						data=Get_MPU_Data(GYRO_ZOUT_H);
+						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
+						type2_angle+=angle_speed*0.05*type2_feedback;
+						HAL_Delay(50);
+					}
+				}
+				else {
+					go(type2_b,type2_a);
+					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
+						data=Get_MPU_Data(GYRO_ZOUT_H);
+						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
+						type2_angle+=angle_speed*0.05*type2_feedback;
+						HAL_Delay(50);
+					}
+				}
+				go(100,100);
+			}
+//需调整量：radius1,radius2,以及其对应的占空比,feedback,积分间隔
+			
 			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
 			{
 				int x[5],y[5];
@@ -540,107 +633,9 @@ int main(void)
 						}
 					}
 				}
-=======
-			if (carmove->type==1){  //go straight
-				if (delta>=0){
-					leftv = leftV - delta*0.08;
-					rightv = rightV - delta*0.08 - delta*0.1;
-				}
-				else{
-					leftv = leftV + delta*0.08 + delta*0.1;
-					rightv = rightV + delta*0.08;
-				}
-				//printf("leftv=%d rightv=%d",leftv,rightv);
-				leftpwm = leftv + (leftv - leftu)*0.5;
-				rightpwm = rightv + (rightv - rightu)*0.5;
-				if (leftpwm>100) leftpwm=100;
-				if (leftpwm<30) leftpwm=30;
-				if (rightpwm>100) rightpwm=100;
-				if (rightpwm<30) rightpwm=30;
-				//printf("leftpwm=%d rightpwm=%d",leftpwm,rightpwm);
-				go(leftpwm,rightpwm);
-				//calculate angle
-				if (pretype!=1){
-					for (int i=0;i<5;i++){
-						x[i]=0;y[i]=0;
-					}
-				}
-
-				desvector->x = carmove->dest_x - message->my_x;
-				desvector->y = carmove->dest_y - message->my_y;
-				cal_vecangle(desvector);	
-				uint8_t maxn=4;
-				while(x[maxn]==0) maxn--;
-				maxn++;
-				if (maxn==1) myvector->angle = desvector->angle;
-				else myvector->angle = cal_myangle(x,y,maxn);
-				angle_error = myvector->angle - desvector->angle;
-				if (angle_error<=-180) angle_error+=360;
-				if (angle_error>180) angle_error-=360;
-				printf("myangle=%f\ndesangle=%f\nerror=%f\n\n",myvector->angle,desvector->angle,angle_error);
-				
-				if (abs(angle_error)==0||carmove->r<10){
-					go(98,100);
-				}
-				else if ((angle_error>0)&&(angle_error<=5)){  
-					go(98,95);
-				}
-				else if ((angle_error<0)&&(angle_error>=-5)){ 
-					go(93,100);
-				}
-				else if ((angle_error>5)&&(angle_error<=15)){ 
-					go(98,85);
-				}
-				else if ((angle_error<-5)&&(angle_error>=-15)){ 
-					go(83,100);
-				}
-				else if (angle_error>15){
-					go(100,70);
-				}
-				else if(angle_error<-15){
-					go(70,100);
-				}
 			}
 
-			if(type==2)//turning without camera
-			{
-				//value
-				float type2_feedback=1.0;
-				double type2_angle=0;
-				int type2_radius1=10;
-				int type2_radius2=20;
-				int type2_a,type2_b;
-				//radius
-				if(carmove->radius<type2_radius1) {type2_a=10; type2_b=90;}
-				else if(carmove->radius>type2_radius1) {type2_a=70; type2_b=100;}
-				else {type2_a=40; type2_b=90;}
-				//angle
-				type2_angle=0;
-				if(carmove->angle>=0){
-					go(type2_a,type2_b);
-					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
-						data=Get_MPU_Data(GYRO_ZOUT_H);
-						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
-						type2_angle+=angle_speed*0.05*type2_feedback;
-						HAL_Delay(50);
-					}
-				}
-				else {
-					go(type2_b,type2_a);
-					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
-						data=Get_MPU_Data(GYRO_ZOUT_H);
-						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
-						type2_angle+=angle_speed*0.05*type2_feedback;
-						HAL_Delay(50);
-					}
-				}
-				go(100,100);
->>>>>>> b7392b2b64af353f2d0dbfe154d908adfe5e0ed1
-			}
-//需调整量：radius1,radius2,以及其对应的占空比,feedback,积分间隔
 
-
-		}
 		}
 	}
   /* USER CODE END 3 */
