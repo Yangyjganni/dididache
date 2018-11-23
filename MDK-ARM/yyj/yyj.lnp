@@ -6,7 +6,6 @@
 "yyj\main.o"
 "yyj\findroad.o"
 "yyj\index_map.o"
-"yyj\utils.o"
 "yyj\stm32f1xx_hal_tim_ex.o"
 "yyj\stm32f1xx_hal_flash.o"
 "yyj\stm32f1xx_hal_flash_ex.o"

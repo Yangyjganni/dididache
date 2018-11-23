@@ -2,7 +2,7 @@ yyj\system_stm32f1xx.o: ../Src/system_stm32f1xx.c
 yyj\system_stm32f1xx.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h
 yyj\system_stm32f1xx.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h
 yyj\system_stm32f1xx.o: ../Drivers/CMSIS/Include/core_cm3.h
-yyj\system_stm32f1xx.o: D:\MySoftwares\dianshe\ARM\ARMCC\Bin\..\include\stdint.h
+yyj\system_stm32f1xx.o: C:\Softwares\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 yyj\system_stm32f1xx.o: ../Drivers/CMSIS/Include/core_cmInstr.h
 yyj\system_stm32f1xx.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
 yyj\system_stm32f1xx.o: ../Drivers/CMSIS/Include/core_cmFunc.h
@@ -13,7 +13,7 @@ yyj\system_stm32f1xx.o: ../Inc/main.h
 yyj\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h
 yyj\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h
 yyj\system_stm32f1xx.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h
-yyj\system_stm32f1xx.o: D:\MySoftwares\dianshe\ARM\ARMCC\Bin\..\include\stdio.h
+yyj\system_stm32f1xx.o: C:\Softwares\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 yyj\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h
 yyj\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h
 yyj\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h
