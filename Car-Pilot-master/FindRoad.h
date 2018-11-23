@@ -79,7 +79,12 @@ MoveList find_road(int st_x, int st_y, int ed_x, int ed_y);
 
 CarMove get_next_move(int st_x, int st_y, int ed_x, int ed_y);
 
+CarMove get_next_move_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curAngle);
+
+
 CarMove GetNextMove(MessageInfo info);
+
+CarMove GetNextMoveWithAngle(MessageInfo info, short curAngle);
 
 #ifdef DEBUG_MODE
 void FindAllDis();

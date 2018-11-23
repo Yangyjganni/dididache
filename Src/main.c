@@ -92,8 +92,8 @@ volatile uint8_t refreshed=0;
 int current=0;  //position of the newest data in text[]
 uint8_t pitext[5];
 volatile uint8_t pirefreshed=0;
-uint8_t fre=10;  //±àÂëÆ÷ÆµÂÊ
-volatile int leftu=0,rightu=0;  //µ±Ç°ËÙ¶È(pwm±íÊ¾)
+uint8_t fre=10;  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æµï¿½ï¿½
+volatile int leftu=0,rightu=0;  //ï¿½ï¿½Ç°ï¿½Ù¶ï¿½(pwmï¿½ï¿½Ê¾)
 
 
 
@@ -179,11 +179,11 @@ void PIDInit(PID *pp){
 }
 
 /*-----MPU Part Start-----*/
-//MPU6050¼Ä´æÆ÷µØÖ·
-#define	SMPLRT_DIV		0x19	//ÍÓÂİÒÇ²ÉÑùÆµÂÊ,µäĞÍÖµ:0x07(125Hz)
-#define	CONFIG			0x1A	//µÍÍ¨ÂË²¨ÆµÂÊ,µäĞÍÖµ:0x06(5Hz)
-#define	GYRO_CONFIG		0x1B	//ÍÓÂİÒÇ×Ô¼ì¼°²âÁ¿·¶Î§,µäĞÍÖµ:0x18(²»×Ô¼ì,2000deg/s)
-#define	ACCEL_CONFIG	0x1C	//¼ÓËÙ¶È¼Æ×Ô¼ì¡¢²âÁ¿·¶Î§¡¢¸ßÍ¨ÂË²¨ÆµÂÊ,µäĞÍÖµ:0x01(²»×Ô¼ì,2G,5Hz)
+//MPU6050ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
+#define	SMPLRT_DIV		0x19	//ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½ï¿½ï¿½Æµï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Öµ:0x07(125Hz)
+#define	CONFIG			0x1A	//ï¿½ï¿½Í¨ï¿½Ë²ï¿½Æµï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Öµ:0x06(5Hz)
+#define	GYRO_CONFIG		0x1B	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¼ì¼°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§,ï¿½ï¿½ï¿½ï¿½Öµ:0x18(ï¿½ï¿½ï¿½Ô¼ï¿½,2000deg/s)
+#define	ACCEL_CONFIG	0x1C	//ï¿½ï¿½ï¿½Ù¶È¼ï¿½ï¿½Ô¼ì¡¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½Í¨ï¿½Ë²ï¿½Æµï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Öµ:0x01(ï¿½ï¿½ï¿½Ô¼ï¿½,2G,5Hz)
 #define	ACCEL_XOUT_H	0x3B
 #define	ACCEL_XOUT_L	0x3C
 #define	ACCEL_YOUT_H	0x3D
@@ -198,9 +198,9 @@ void PIDInit(PID *pp){
 #define	GYRO_YOUT_L		0x46
 #define	GYRO_ZOUT_H		0x47
 #define	GYRO_ZOUT_L		0x48
-#define	PWR_MGMT_1		0x6B  //µçÔ´¹ÜÀí£¬µäĞÍÖµ£º0x00£¨Õı³£ÆôÓÃ£©
-#define	WHO_AM_I		0x75    //IICµØÖ·¼Ä´æÆ÷£¨Ä¬ÈÏÊıÖµ0x68£¬Ö»¶Á£©
-#define SlaveAddress 0xD0 //Í¨¹ıI2CÏòMPU6050Ğ´ÈëÊı¾İÊ±µÄ¡°Éè±¸µØÖ·¡±£¨+1Îª¶ÁÈ¡£© £¨¾ßÌåº¬Òå²Î¼ûI2CÏà¹Ø½Ì³Ì£¬MPU6050Éè±¸µØÖ·Îª0xD0£©
+#define	PWR_MGMT_1		0x6B  //ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0x00ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½
+#define	WHO_AM_I		0x75    //IICï¿½ï¿½Ö·ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½ï¿½ï¿½Öµ0x68ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½
+#define SlaveAddress 0xD0 //Í¨ï¿½ï¿½I2Cï¿½ï¿½MPU6050Ğ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ä¡ï¿½ï¿½è±¸ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½+1Îªï¿½ï¿½È¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½åº¬ï¿½ï¿½Î¼ï¿½I2Cï¿½ï¿½Ø½Ì³Ì£ï¿½MPU6050ï¿½è±¸ï¿½ï¿½Ö·Îª0xD0ï¿½ï¿½
 
 #define FS_SEL_2000 0x18
 #define FS_SEL_1000 0x10
@@ -208,20 +208,20 @@ void PIDInit(PID *pp){
 #define FS_SEL_250 0x0
 #define FS_SEL FS_SEL_2000
 #define GYRO_SCALE_RANGE 2000
-//ÏÖÑ¡ÓÃµÄÊÇÂúÁ¿³Ì2000¶È£¨¼´¼ÓËÙ¶È¼ÆÊä³ö32767Ê±±íÊ¾½ÇËÙ¶È2000¶È/s£©£¬ÈçÓĞ±ØÒª¿É¸ÄÁ¿³Ì£¬¸ÄÁ¿³ÌÊ±½«ÉÏÃæ×îºóÁ½ĞĞµÄ2000¸ÄÎªËùĞèÁ¿³Ì¼´¿É£¨ÆäËû¿ÉÑ¡Á¿³Ì£º1000,500,250£©
+//ï¿½ï¿½Ñ¡ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2000ï¿½È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶È¼ï¿½ï¿½ï¿½ï¿½32767Ê±ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½Ù¶ï¿½2000ï¿½ï¿½/sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ±ï¿½Òªï¿½É¸ï¿½ï¿½ï¿½ï¿½Ì£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğµï¿½2000ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½Ì£ï¿½1000,500,250ï¿½ï¿½
 
-int16_t data; //´ÓMPU6050Ö±½Ó¶ÁÈ¡µÄÊı¾İ£¨×¢Òâ£ºsigned int ¶ø·Çunsigned£¡£©
-float angle_speed; //ÓÉ½Ç¶È¸ù¾İ¡°ÂúÁ¿³Ì¡±Öµ(Full Scale Range)¼ÆËãµÃµ½µÄ½ÇËÙ¶È
-float angle=0.0; //»ı·ÖµÃµ½µÄ½Ç¶È
-float gyro_z_offset=0.0; //zÖá½ÇËÙ¶È²âÁ¿ÖµÆ«ÒÆÁ¿(¼ûÏÂÃæInitMPU6050()º¯Êı)
+int16_t data; //ï¿½ï¿½MPU6050Ö±ï¿½Ó¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½İ£ï¿½×¢ï¿½â£ºsigned int ï¿½ï¿½ï¿½ï¿½unsignedï¿½ï¿½ï¿½ï¿½
+float angle_speed; //ï¿½É½Ç¶È¸ï¿½ï¿½İ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¡ï¿½Öµ(Full Scale Range)ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½Ä½ï¿½ï¿½Ù¶ï¿½
+float angle=0.0; //ï¿½ï¿½ï¿½ÖµÃµï¿½ï¿½Ä½Ç¶ï¿½
+float gyro_z_offset=0.0; //zï¿½ï¿½ï¿½ï¿½Ù¶È²ï¿½ï¿½ï¿½ÖµÆ«ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½InitMPU6050()ï¿½ï¿½ï¿½ï¿½)
 
-void Single_WriteI2C(uint8_t REG_Address, uint8_t REG_Data) //REG_Address Êı¾İÀàĞÍ uint8_t/uint16_t?
+void Single_WriteI2C(uint8_t REG_Address, uint8_t REG_Data) //REG_Address ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ uint8_t/uint16_t?
 {
 	HAL_I2C_Mem_Write(&hi2c1, SlaveAddress, REG_Address ,1 ,&REG_Data, 1, 1000);
-	//×¢£ºµÚ4¸ö²ÎÊı MemAddSize ±íÊ¾ÒªĞ´ÈëµÄ¼Ä´æÆ÷µÄ´óĞ¡
+	//×¢ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ MemAddSize ï¿½ï¿½Ê¾ÒªĞ´ï¿½ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½Ä´ï¿½Ğ¡
 }
 
-uint8_t Single_ReadI2C(uint8_t REG_Address) //REG_Address Êı¾İÀàĞÍ uint8_t/uint16_t?
+uint8_t Single_ReadI2C(uint8_t REG_Address) //REG_Address ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ uint8_t/uint16_t?
 {
 	uint8_t data;
 	HAL_I2C_Mem_Read(&hi2c1, SlaveAddress, REG_Address ,1 ,&data, 1, 1000);
@@ -229,7 +229,7 @@ uint8_t Single_ReadI2C(uint8_t REG_Address) //REG_Address Êı¾İÀàĞÍ uint8_t/uint1
 }
 
 
-uint16_t Get_MPU_Data(uint8_t REG_Address) //Òª¶ÁÈ¡µÄ2×Ö½ÚµÄÊı¾İµÄ¸ß×Ö½ÚµØÖ·
+uint16_t Get_MPU_Data(uint8_t REG_Address) //Òªï¿½ï¿½È¡ï¿½ï¿½2ï¿½Ö½Úµï¿½ï¿½ï¿½ï¿½İµÄ¸ï¿½ï¿½Ö½Úµï¿½Ö·
 {
 	uint8_t H,L;
 	H=Single_ReadI2C(REG_Address);
@@ -240,27 +240,27 @@ uint16_t Get_MPU_Data(uint8_t REG_Address) //Òª¶ÁÈ¡µÄ2×Ö½ÚµÄÊı¾İµÄ¸ß×Ö½ÚµØÖ·
 
 void InitMPU6050()
 {
-	Single_WriteI2C(PWR_MGMT_1, 0x00);	//½â³ıĞİÃß×´Ì¬
+	Single_WriteI2C(PWR_MGMT_1, 0x00);	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
 	Single_WriteI2C(SMPLRT_DIV, 0x07);
 	Single_WriteI2C(CONFIG, 0x06);
 	Single_WriteI2C(GYRO_CONFIG, FS_SEL);
 	Single_WriteI2C(ACCEL_CONFIG, 0x01);
 	
-	//ÏÂÃæµÄ´úÂë£ºÏû³ızÖá½ÇËÙ¶ÈÆ«ÒÆÁ¿
+	//ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ë£ºï¿½ï¿½ï¿½ï¿½zï¿½ï¿½ï¿½ï¿½Ù¶ï¿½Æ«ï¿½ï¿½ï¿½ï¿½
 	int i;
 	int16_t _data;
-	HAL_Delay(1000); //µÈMPUÎÈ¶¨Ö®ºóÔÙ²â 
+	HAL_Delay(1000); //ï¿½ï¿½MPUï¿½È¶ï¿½Ö®ï¿½ï¿½ï¿½Ù²ï¿½ 
 	for(i=1;i<=10;i++)
 	{
 		_data=Get_MPU_Data(GYRO_ZOUT_H);
-		//²»Òª°ÑGet_MPU_Data·µ»ØµÄint16_tÀàĞÍÊı¾İÖ±½Ó¸³Öµ¸øfloatÀàĞÍÊı¾İ£¬µ¥Æ¬»ú²»»á½øĞĞÀàĞÍ×ª»»£¡ÒªÍ¨¹ıÖĞ¼ä±äÁ¿¸³Öµ£¡£¡ 
+		//ï¿½ï¿½Òªï¿½ï¿½Get_MPU_Dataï¿½ï¿½ï¿½Øµï¿½int16_tï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½Ó¸ï¿½Öµï¿½ï¿½floatï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ£ï¿½ï¿½ï¿½Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ÒªÍ¨ï¿½ï¿½ï¿½Ğ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ 
 		gyro_z_offset+=_data;
-		HAL_Delay(100); //100msÕâÑù¸ü×¼Ò»Ğ© 
+		HAL_Delay(100); //100msï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¼Ò»Ğ© 
 	}
 	gyro_z_offset/=10;
 	printf("offset:%f",gyro_z_offset);
-	/*×¢£ºMPU6050²âµÃµÄÔ­Ê¼Êı¾İ´æÔÚÆ«ÒÆÁ¿£¨½ÇËÙ¶ÈÎª0Ê±´ÓMPU6050µÄ¼Ä´æÆ÷ÖĞ¶Á³öµÄÊı¾İ²»Îª0£©¡£
-	¿ÉÍ¨¹ıÈ¡Èô¸É´ÎÆ½¾ùµÄ·½·¨Çó³öÆ«ÒÆÁ¿£¬È»ºóÃ¿´Î²âÁ¿¶ÁÈ¡Ô­Ê¼Êı¾İÖ®ºó¼õÈ¥Æ«ÒÆÁ¿*/
+	/*×¢ï¿½ï¿½MPU6050ï¿½ï¿½Ãµï¿½Ô­Ê¼ï¿½ï¿½ï¿½İ´ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½Îª0Ê±ï¿½ï¿½MPU6050ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½Ğ¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ²ï¿½Îª0ï¿½ï¿½ï¿½ï¿½
+	ï¿½ï¿½Í¨ï¿½ï¿½È¡ï¿½ï¿½ï¿½É´ï¿½Æ½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È»ï¿½ï¿½Ã¿ï¿½Î²ï¿½ï¿½ï¿½ï¿½ï¿½È¡Ô­Ê¼ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½È¥Æ«ï¿½ï¿½ï¿½ï¿½*/
 	
 }
 /*-----MPU Part end-----*/
@@ -289,8 +289,8 @@ int main(void)
 	vector* desvector=(vector*)malloc(sizeof(vector)); 
 
 	int delta=0;
-	int leftV=90,rightV=90,leftv=0,rightv=0;  //V-Æ½¾ùËÙ¶È, v-µ±Ç°ÀíÂÛËÙ¶È
-	int leftpwm=0,rightpwm=0;  //µ±Ç°pwm
+	int leftV=90,rightV=90,leftv=0,rightv=0;  //V-Æ½ï¿½ï¿½ï¿½Ù¶ï¿½, v-ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+	int leftpwm=0,rightpwm=0;  //ï¿½ï¿½Ç°pwm
 	
   /* USER CODE END 1 */
 
@@ -454,31 +454,45 @@ int main(void)
 					go(70,100);
 				}
 			}
-			if (carmove->type==2){
-				if (carmove->angle<0){  //turn left
-					go(70,100);
-					angle=0;
-						while(carmove->angle<angle && -1*carmove->angle>angle){
-							data=Get_MPU_Data(GYRO_ZOUT_H);
-							angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE*1.4/32768.0;
-							angle+=angle_speed*0.01;
-							HAL_Delay(10);
-						}
-					go(100,100);
-				}
-				else{  //turn right
-					go(100,70);
-					angle=0;
-						while(carmove->angle>angle && -1*carmove->angle<angle){
-							data=Get_MPU_Data(GYRO_ZOUT_H);
-							angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE*1.4/32768.0;
-							angle+=angle_speed*0.01;
-							HAL_Delay(10);
-						}
-					go(100,100);
+
+			if(type==2)//turning without camera
+			{
+				//value
+				float type2_feedback=1.0;
+				double type2_angle=0;
+				int type2_radius1=10;
+				int type2_radius2=20;
+				int type2_a,type2_b;
+				//radius
+				if(carmove->radius<type2_radius1) {type2_a=10; type2_b=90;}
+				else if(carmove->radius>type2_radius1) {type2_a=70; type2_b=100;}
+				else {type2_a=40; type2_b=90;}
+				//angle
+				type2_angle=0;
+				if(carmove->angle>=0){
+					go(type2_a,type2_b);
+					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
+						data=Get_MPU_Data(GYRO_ZOUT_H);
+						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
+						type2_angle+=angle_speed*0.05*type2_feedback;
+						HAL_Delay(50);
 					}
 				}
+				else {
+					go(type2_b,type2_a);
+					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
+						data=Get_MPU_Data(GYRO_ZOUT_H);
+						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
+						type2_angle+=angle_speed*0.05*type2_feedback;
+						HAL_Delay(50);
+					}
+				}
+				go(100,100);
 			}
+//éœ€è°ƒæ•´é‡ï¼šradius1,radius2,ä»¥åŠå…¶å¯¹åº”çš„å ç©ºæ¯”,feedback,ç§¯åˆ†é—´éš”
+
+
+		}
 		}
   /* USER CODE END 3 */
 
