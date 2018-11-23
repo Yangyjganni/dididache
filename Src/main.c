@@ -45,6 +45,7 @@
 #include "FindRoad.h"
 #include "decodemessage.h"
 #include "utils.h"
+#define zhushi
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -292,7 +293,7 @@ int main(void)
 	vector* desvector=(vector*)malloc(sizeof(vector)); 
 
 	int delta=0;
-	int leftV=90,rightV=90,leftv=0,rightv=0;  //V-Æ½ï¿½ï¿½ï¿½Ù¶ï¿½, v-ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+	int leftV=90,rightV=90,leftv=0,rightv=0;  //V-Æ½ï¿½ï¿½ï¿½Ù¶ï¿½, v-ï¿½ï¿½°ï¿½ï¿½ïÇ¿½ï¿½ï¿½Ù¶ï¿½
 	int leftpwm=0,rightpwm=0;  //ï¿½ï¿½Ç°pwm
 	
   /* USER CODE END 1 */
@@ -327,7 +328,7 @@ int main(void)
 	uint8_t a[]="--This is a test message.--\r\n";
 	printf("%s",a);  //send a test message
 	HAL_UART_Receive_IT(&huart1,pitext,4);
-	
+#ifndef zhushi
 	HAL_UART_Transmit(&huart3,"AT\r\n",4,100);
 	HAL_UART_Transmit(&huart2,"AT\r\n",4,100);
 	HAL_Delay(3000);
@@ -339,15 +340,18 @@ int main(void)
 	HAL_UART_Transmit(&huart2,"AT+RST\r\n",8,100);
 	HAL_UART_Transmit(&huart3,"AT+RST\r\n",8,100);
 	HAL_Delay(3000);
-	
+	/*
 	HAL_UART_Transmit(&huart2,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
 	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
-	HAL_Delay(5000);
+	*/
+	HAL_UART_Transmit(&huart2,"AT+CWJAP=\"sta-dpi\",\"IloveDPI\"\r\n",40,100);
+	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"sta-dpi\",\"IloveDPI\"\r\n",40,100);
+	HAL_Delay(8000);
 	
   HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.100\",20000\r\n",41,100);
 	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.100\",20000\r\n",41,100);
 	HAL_Delay(3000);
-	
+#endif
   HAL_TIM_Base_Start_IT(&htim1);
 	HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
@@ -372,7 +376,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
+	message->my_x=67;message->my_y=189;
+	message->oppo_x=0;message->oppo_y=0;message->passengerNum=2;
+	message->pass_status[0]=0;message->xs_pos[0]=113;message->ys_pos[0]=127;message->xe_pos[0]=218;
+	message->ye_pos[0]=206;message->pass_status[1]=0;message->xs_pos[1]=31;message->ys_pos[1]=49;
+	message->xe_pos[1]=241;message->ye_pos[1]=69;
   while (1)
   {
   /* USER CODE END WHILE */
@@ -388,15 +396,17 @@ int main(void)
 			pirefreshed=0;
 		}
 		uint8_t pretype=carmove->type;
-		if (refreshed==1){
-			msgrefresh((char*)text,message,isA);
+		if (1||refreshed==1){
+			//msgrefresh((char*)text,message,isA);
 			refreshed=0;
+			/*
 			printf("\nmy_x=%d my_y=%d oppo_x=%d oppo_y=%d passengerNum=%d\n",
 			message->my_x,message->my_y,message->oppo_x,message->oppo_y,message->passengerNum);
 			for (int i=0;i<message->passengerNum;i++){
 				printf("pass_status=%hhd xs_pos=%d ys_pos=%d xe_pos=%d ye_pos=%d\n",
 				message->pass_status[i],message->xs_pos[i],message->ys_pos[i],message->xe_pos[i],message->ye_pos[i]);
 			}
+			*/
 			for (int i=4;i>0;i--){
 				x[i]=x[i-1];
 				y[i]=y[i-1];
@@ -411,17 +421,21 @@ int main(void)
 			if (maxn==0||maxn==1) _angle = -1;
 			else _angle = cal_myangle(x,y,maxn);
 			_angle=-1;
+			
 			*carmove=GetNextMoveWithAngle(*message,_angle);
+			message->my_x = carmove->dest_x;
+			message->my_y = carmove->dest_y;
 			if (carmove->type==0){
 				printf("type=0");
 			}
 			if (carmove->type==1){
-				printf("type=1 x=%d y=%d dis=%f  mm",carmove->dest_x,carmove->dest_y, carmove->dis);
+				printf("type=1 x=%d y=%d dis=%f",carmove->dest_x,carmove->dest_y, carmove->dis);
 			}
 			if (carmove->type==2){
-				printf("type=2 angle=%d dis=%f mm",carmove->angle, carmove->dis);
+				printf("type=2 angle=%d",carmove->angle);
 			}
 			//carmove->type=1;
+
 			if (carmove->type==0){
 				go(0,0);
 			}
@@ -451,7 +465,7 @@ int main(void)
 				}			
 			}
 
-			if(carmove->type==2)//turning without camera
+			if(carmove->type==2 || carmove->type==4)//turning without camera
 			{
 				//value
 				float type2_feedback=1.4;
@@ -465,14 +479,17 @@ int main(void)
 				else {type2_a=85; type2_b=98;}
 				//angle
 				type2_angle=0;
+				#ifndef zhushi
 				if(carmove->angle>=0){
 					go(type2_b,type2_a);
+					
 					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
 						type2_angle+=angle_speed*0.05*type2_feedback;
 						HAL_Delay(50);
 					}
+					
 				}
 				else {
 					go(type2_a,type2_b);
@@ -483,12 +500,16 @@ int main(void)
 						HAL_Delay(50);
 					}
 				}
+				#endif
 				go(100,100);
 			}
 //éœ€è°ƒæ•´é‡ï¼šradius1,radius2,ä»¥åŠå…¶å¯¹åº”çš„å ç©ºæ¯”,feedback,ç§¯åˆ†é—´éš”
 			
 			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
 			{
+				#ifndef zhushi
+				continue;
+				#endif
 				int8_t i,max_i=-1; //max_i±íÊ¾ÔÚxºÍyÊı×éÖĞ´æ´¢ÁËÊı¾İµÄ×î´óÏÂ±ê
 				for(i=0;i<=4;i++){
 					x[i]=0; y[i]=0;
@@ -636,8 +657,6 @@ int main(void)
 					}
 				}
 			}
-
-
 		}
 	}
   /* USER CODE END 3 */
