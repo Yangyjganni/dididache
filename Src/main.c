@@ -55,6 +55,7 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
@@ -76,6 +77,7 @@ static void MX_TIM4_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_TIM8_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -95,6 +97,7 @@ uint8_t pitext[5];
 volatile uint8_t pirefreshed=0;
 uint8_t fre=10;  //������Ƶ��
 volatile int leftu=0,rightu=0;  //��ǰ�ٶ�(pwm��ʾ)
+volatile uint8_t TimeUp=0;
 
 struct _vector{
 	int x,y;
@@ -211,17 +214,17 @@ void PIDInit(PID *pp){
 #define FS_SEL_250 0x0
 #define FS_SEL FS_SEL_2000
 #define GYRO_SCALE_RANGE 2000
-//��ѡ�õ���������2000�ȣ������ٶȼ����32767ʱ��ʾ���ٶ�2000��/s�������б�Ҫ�ɸ����̣�������ʱ������������е�2000��Ϊ�������̼��ɣ�������ѡ���̣�1000,500,250��
+//��ѡ�õ���������2000�ȣ������ٶȼ����?32767ʱ��ʾ���ٶ�2000��/s�������б�Ҫ�ɸ����̣�������ʱ������������е�?2000��Ϊ�������̼��ɣ�������ѡ���̣�1000,500,250��
 
 int16_t data; //��MPU6050ֱ�Ӷ�ȡ�����ݣ�ע�⣺signed int ����unsigned����
-float angle_speed; //�ɽǶȸ��ݡ������̡�ֵ(Full Scale Range)����õ��Ľ��ٶ�
+float angle_speed; //�ɽǶȸ��ݡ������̡�ֵ(Full Scale Range)����õ��Ľ��ٶ�?
 float angle=0.0; //���ֵõ��ĽǶ�
-float gyro_z_offset=0.0; //z����ٶȲ���ֵƫ����(������InitMPU6050()����)
+float gyro_z_offset=0.0; //z����ٶȲ���ֵƫ����?(������InitMPU6050()����)
 
 void Single_WriteI2C(uint8_t REG_Address, uint8_t REG_Data) //REG_Address �������� uint8_t/uint16_t?
 {
 	HAL_I2C_Mem_Write(&hi2c1, SlaveAddress, REG_Address ,1 ,&REG_Data, 1, 1000);
-	//ע����4������ MemAddSize ��ʾҪд��ļĴ����Ĵ�С
+	//ע����4������ MemAddSize ��ʾҪд��ļĴ����Ĵ��?
 }
 
 uint8_t Single_ReadI2C(uint8_t REG_Address) //REG_Address �������� uint8_t/uint16_t?
@@ -243,13 +246,16 @@ uint16_t Get_MPU_Data(uint8_t REG_Address) //Ҫ��ȡ��2�ֽڵ����
 
 void InitMPU6050()
 {
-	Single_WriteI2C(PWR_MGMT_1, 0x00);	//�������״̬
+	#ifndef zhushi
+	printf("start mpu6050 init");
+	#endif
+	Single_WriteI2C(PWR_MGMT_1, 0x00);	//�������״�?
 	Single_WriteI2C(SMPLRT_DIV, 0x07);
 	Single_WriteI2C(CONFIG, 0x06);
 	Single_WriteI2C(GYRO_CONFIG, FS_SEL);
 	Single_WriteI2C(ACCEL_CONFIG, 0x01);
 	
-	//����Ĵ��룺����z����ٶ�ƫ����
+	//����Ĵ��룺����z����ٶ�ƫ����?
 	int i;
 	int16_t _data;
 	HAL_Delay(1000); //��MPU�ȶ�֮���ٲ� 
@@ -262,7 +268,7 @@ void InitMPU6050()
 	}
 	gyro_z_offset/=10;
 	printf("offset:%f",gyro_z_offset);
-	/*ע��MPU6050��õ�ԭʼ���ݴ���ƫ���������ٶ�Ϊ0ʱ��MPU6050�ļĴ����ж��������ݲ�Ϊ0����
+	/*ע��MPU6050��õ�ԭʼ���ݴ���ƫ���������ٶ��?0ʱ��MPU6050�ļĴ����ж��������ݲ�Ϊ0����
 	��ͨ��ȡ���ɴ�ƽ���ķ������ƫ������Ȼ��ÿ�β�����ȡԭʼ����֮���ȥƫ����*/
 	
 }
@@ -278,8 +284,6 @@ void InitMPU6050()
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	setInitHandle(&huart3);
-	//InitMPU6050();
 	MessageInfo* message=(MessageInfo*)malloc(sizeof(MessageInfo));
 	CarMove* carmove=(CarMove*)malloc(sizeof(CarMove));
 	uint8_t isA=(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_2)?1:0);
@@ -324,9 +328,12 @@ int main(void)
   MX_I2C1_Init();
   MX_USART3_UART_Init();
   MX_USART1_UART_Init();
+  MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
+	setInitHandle(&huart3);
 	uint8_t a[]="--This is a test message.--\r\n";
 	printf("%s",a);  //send a test message
+	InitMPU6050();
 	HAL_UART_Receive_IT(&huart1,pitext,4);
 #ifndef zhushi
 	HAL_UART_Transmit(&huart3,"AT\r\n",4,100);
@@ -468,7 +475,6 @@ int main(void)
 			if(carmove->type==2 || carmove->type==4)//turning without camera
 			{
 				//value
-				float type2_feedback=1.4;
 				double type2_angle=0;
 				int type2_radius1=15;
 				int type2_radius2=28;
@@ -480,30 +486,32 @@ int main(void)
 				//angle
 				type2_angle=0;
 				#ifndef zhushi
+				HAL_TIM_Base_Start_IT(&htim8);
 				if(carmove->angle>=0){
 					go(type2_b,type2_a);
-					
 					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
+						if (TimeUp==0) continue;
+						TimeUp=0;
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
-						type2_angle+=angle_speed*0.05*type2_feedback;
-						HAL_Delay(50);
-					}
-					
+						type2_angle+=angle_speed*0.01;
+					}					
 				}
 				else {
 					go(type2_a,type2_b);
 					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
+						if (TimeUp==0) continue;
+						TimeUp=0; 
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
-						type2_angle+=angle_speed*0.05*type2_feedback;
-						HAL_Delay(50);
+						type2_angle+=angle_speed*0.01;
 					}
 				}
+				HAL_TIM_Base_Stop_IT(&htim8);
 				#endif
-				go(100,100);
+				go(0,0);
 			}
-//需调整量：radius1,radius2,以及其对应的占空比,feedback,积分间隔
+//�?调整量：radius1,radius2,以及其对应的占空�?,feedback,积分间隔
 			
 			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
 			{
@@ -879,6 +887,40 @@ static void MX_TIM4_Init(void)
 
 }
 
+/* TIM8 init function */
+static void MX_TIM8_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim8.Instance = TIM8;
+  htim8.Init.Prescaler = 799;
+  htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim8.Init.Period = 99;
+  htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim8.Init.RepetitionCounter = 0;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim8, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
 /* USART1 init function */
 static void MX_USART1_UART_Init(void)
 {
@@ -1013,7 +1055,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		leftu = (int)(__HAL_TIM_GET_COUNTER(&htim2))*fre*98/(160*8);
 		__HAL_TIM_SET_COUNTER(&htim2, 0);
 		__HAL_TIM_SET_COUNTER(&htim3, 0);	
-	}	
+	}
+	if (htim->Instance==TIM8){
+		TimeUp=1;
+	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
