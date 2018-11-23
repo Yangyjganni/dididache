@@ -352,6 +352,19 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_2);
 	
 	HAL_UART_Receive_IT(&huart2,receive,1);
+	
+	if(1==isA) 
+	{
+		myvector->x=0;
+		myvector->y=0;
+		myvector->angle=0;
+	}
+	else
+	{
+		myvector->x=0;
+		myvector->y=0;
+		myvector->angle=0;
+	}
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -388,7 +401,11 @@ int main(void)
 			x[0]=message->my_x;
 			y[0]=message->my_y;
 			
-			*carmove=GetNextMove(*message);
+			short _angle;
+			_angle=(short)myvector->angle;
+			if(_angle >=360) angle-=360;
+			else if(_angle <0) angle+=360;
+			*carmove=GetNextMoveWithAngle(*message,_angle);
 			
 			//carmove->type=1;
 			if (carmove->type==0){
@@ -494,7 +511,7 @@ int main(void)
 			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
 			{
 				int x[5],y[5];
-				uint8_t i,max_i=-1; //max_i表示在x和y数组中存储了数据的最大下标
+				int8_t i,max_i=-1; //max_i表示在x和y数组中存储了数据的最大下标
 				/*for(i=0;i<=4;i++){
 					x[i]=0; y[i]=0;
 				}*/
@@ -522,7 +539,7 @@ int main(void)
 						if(max_i<4) max_i++;
 						x[0]=message->my_x;
 						y[0]=message->my_y;
-						if(max_i>=1) carmove->angle=cal_myangle(x,y,max_i);
+						if(max_i>=1) myvector->angle=cal_myangle(x,y,max_i);
 						
 						if(4*x[0]+3*y[0] >= 1090) //进入第二段圆弧
 						{
@@ -585,7 +602,7 @@ int main(void)
 						if(max_i<4) max_i++;
 						x[0]=message->my_x;
 						y[0]=message->my_y;
-						if(max_i>=1) carmove->angle=cal_myangle(x,y,max_i);
+						if(max_i>=1) myvector->angle=cal_myangle(x,y,max_i);
 						
 						if(3*x[0]+4*y[0] <= 1090) //进入第二段圆弧
 						{
