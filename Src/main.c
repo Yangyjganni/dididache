@@ -43,7 +43,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "FindRoad.h"
-#include "utils.h"
+#include "decodemessage.h"
 
 /* USER CODE END Includes */
 
@@ -90,82 +90,12 @@ uint8_t temptext[75];
 volatile uint8_t text[70];
 volatile uint8_t refreshed=0;
 int current=0;  //position of the newest data in text[]
-
-uint8_t pitext[20];
+uint8_t pitext[5];
 volatile uint8_t pirefreshed=0;
-volatile int leftfre=0,rightfre=0;  //current frequency
-volatile uint8_t l=0, r=0;  //set pwm
-
-/*
-int fputc(int ch,FILE *f)
-{
-	uint8_t temp[1]={ch};
-	HAL_UART_Transmit(&huart3,temp,1,100);
-	return(ch);
-}
-*/
-
-void change(int *p, int *q, int *r){
-    *q=*q-1;
-    *r=*r+1;
-    if(*q<0){
-        *p=*p+1;
-        *q=7;
-    }
-}
-
-void msgrefresh(char* b, struct _MessageInfo* msg, uint8_t who){
-    int p=2,q=3,r=11;
-    static unsigned char a[64];
-    for(int i = 0; i < 64; ++i)
-        a[i] = (unsigned char)b[i];
-
- //AX AY BX BY
-    if(who==1){
-        msg->my_x=((a[2]&(1<<7)) << 1)+a[5];
-        msg->my_y=((a[2]&(1<<6)) << 2) +a[6];
-        msg->oppo_x=((a[2]&(1<<5)) << 3)+a[7];
-        msg->oppo_y=((a[2]&(1<<4)) << 4)+a[8];
-    }
-    else{
-         msg->oppo_x = ((a[2] & (1 << 7)) << 1) + a[5];
-         //msg->oppo_x=(a[2]&(1<<7))/(1<<7)*256+a[5];
-         msg->oppo_y=((a[2]&(1<<6)) << 2) +a[6];
-         msg->my_x = ((a[2] & (1 << 5)) << 3)+ a[7];
-         //msg->my_x=(a[2]&(1<<5))/(1<<5)*256+a[7];
-         msg->my_y=((a[2]&(1<<4)) << 4)+a[8];
-    }
-
- //nSX nSY nEX nEY(N=1:5)
-    for(int num=0;num<5;num++){
-        msg->xs_pos[num]=((a[p]&(1<<q)) >> q << 8)+a[r];
-        change(&p, &q, &r);
-        msg->ys_pos[num]=((a[p]&(1<<q)) >> q << 8)+a[r];
-        change(&p, &q, &r);
-        msg->xe_pos[num]=((a[p]&(1<<q)) >> q << 8)+a[r];
-        change(&p, &q, &r);
-        msg->ye_pos[num]=((a[p]&(1<<q)) >> q << 8)+a[r];
-        change(&p, &q, &r);
-    }
+uint8_t fre=10;  //������Ƶ��
+volatile int leftu=0,rightu=0;  //��ǰ�ٶ�(pwm��ʾ)
 
 
-//ncondition totalnumber(00 ??? 01A? 10B?)
-    msg->passengerNum=(a[9]&252)/4;
-    msg->pass_status[0]=a[9]&3;
-    msg->pass_status[1]=a[10]&(3<<6);
-    msg->pass_status[2]=a[10]&(3<<4);
-    msg->pass_status[3]=a[10]&(3<<2);
-    msg->pass_status[4]=a[10]&3;
-
- /*
- //A/Bcheat A/Bscore
- int Acheat,Bcheat,Ascore,Bscore;
- Acheat=a[31];
- Bcheat=a[32];
- Ascore=a[33]*256+a[34];
- Bscore=a[35]*256+a[36];
- */
-}
 
 struct _vector{
 	int x,y;
@@ -212,13 +142,13 @@ float cal_myangle(int* x,int* y,int maxn){
 	}
 }
 
-void go(uint8_t l,uint8_t r){ /*
-	__HAL_TIM_SET_COMPARE(&htim4,TIM_CHANNEL_1,l);
-	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_9,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_8,GPIO_PIN_RESET);
-	__HAL_TIM_SET_COMPARE(&htim4,TIM_CHANNEL_2,r);
-	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_7,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_6,GPIO_PIN_RESET); */
+void go(uint8_t l,uint8_t r){
+	__HAL_TIM_SET_COMPARE(&htim4,TIM_CHANNEL_1,r);
+	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_9,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_8,GPIO_PIN_SET);
+	__HAL_TIM_SET_COMPARE(&htim4,TIM_CHANNEL_2,l);
+	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_7,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_6,GPIO_PIN_SET);
 }
 
 struct _PID{
@@ -248,8 +178,92 @@ void PIDInit(PID *pp){
 	pp->Kd=0;
 }
 
+/*-----MPU Part Start-----*/
+//MPU6050�Ĵ�����ַ
+#define	SMPLRT_DIV		0x19	//�����ǲ���Ƶ��,����ֵ:0x07(125Hz)
+#define	CONFIG			0x1A	//��ͨ�˲�Ƶ��,����ֵ:0x06(5Hz)
+#define	GYRO_CONFIG		0x1B	//�������Լ켰������Χ,����ֵ:0x18(���Լ�,2000deg/s)
+#define	ACCEL_CONFIG	0x1C	//���ٶȼ��Լ졢������Χ����ͨ�˲�Ƶ��,����ֵ:0x01(���Լ�,2G,5Hz)
+#define	ACCEL_XOUT_H	0x3B
+#define	ACCEL_XOUT_L	0x3C
+#define	ACCEL_YOUT_H	0x3D
+#define	ACCEL_YOUT_L	0x3E
+#define	ACCEL_ZOUT_H	0x3F
+#define	ACCEL_ZOUT_L	0x40
+#define	TEMP_OUT_H		0x41
+#define	TEMP_OUT_L		0x42
+#define	GYRO_XOUT_H		0x43
+#define	GYRO_XOUT_L		0x44
+#define	GYRO_YOUT_H		0x45
+#define	GYRO_YOUT_L		0x46
+#define	GYRO_ZOUT_H		0x47
+#define	GYRO_ZOUT_L		0x48
+#define	PWR_MGMT_1		0x6B  //��Դ��������ֵ��0x00���������ã�
+#define	WHO_AM_I		0x75    //IIC��ַ�Ĵ�����Ĭ����ֵ0x68��ֻ����
+#define SlaveAddress 0xD0 //ͨ��I2C��MPU6050д������ʱ�ġ��豸��ַ����+1Ϊ��ȡ�� �����庬��μ�I2C��ؽ̳̣�MPU6050�豸��ַΪ0xD0��
+
+#define FS_SEL_2000 0x18
+#define FS_SEL_1000 0x10
+#define FS_SEL_500 0x8
+#define FS_SEL_250 0x0
+#define FS_SEL FS_SEL_2000
+#define GYRO_SCALE_RANGE 2000
+//��ѡ�õ���������2000�ȣ������ٶȼ����32767ʱ��ʾ���ٶ�2000��/s�������б�Ҫ�ɸ����̣�������ʱ������������е�2000��Ϊ�������̼��ɣ�������ѡ���̣�1000,500,250��
+
+int16_t data; //��MPU6050ֱ�Ӷ�ȡ�����ݣ�ע�⣺signed int ����unsigned����
+float angle_speed; //�ɽǶȸ��ݡ������̡�ֵ(Full Scale Range)����õ��Ľ��ٶ�
+float angle=0.0; //���ֵõ��ĽǶ�
+float gyro_z_offset=0.0; //z����ٶȲ���ֵƫ����(������InitMPU6050()����)
+
+void Single_WriteI2C(uint8_t REG_Address, uint8_t REG_Data) //REG_Address �������� uint8_t/uint16_t?
+{
+	HAL_I2C_Mem_Write(&hi2c1, SlaveAddress, REG_Address ,1 ,&REG_Data, 1, 1000);
+	//ע����4������ MemAddSize ��ʾҪд��ļĴ����Ĵ�С
+}
+
+uint8_t Single_ReadI2C(uint8_t REG_Address) //REG_Address �������� uint8_t/uint16_t?
+{
+	uint8_t data;
+	HAL_I2C_Mem_Read(&hi2c1, SlaveAddress, REG_Address ,1 ,&data, 1, 1000);
+	return data;
+}
 
 
+uint16_t Get_MPU_Data(uint8_t REG_Address) //Ҫ��ȡ��2�ֽڵ����ݵĸ��ֽڵ�ַ
+{
+	uint8_t H,L;
+	H=Single_ReadI2C(REG_Address);
+	L=Single_ReadI2C(REG_Address+1);
+	return ((uint16_t)H)*256+L;
+}
+
+
+void InitMPU6050()
+{
+	Single_WriteI2C(PWR_MGMT_1, 0x00);	//�������״̬
+	Single_WriteI2C(SMPLRT_DIV, 0x07);
+	Single_WriteI2C(CONFIG, 0x06);
+	Single_WriteI2C(GYRO_CONFIG, FS_SEL);
+	Single_WriteI2C(ACCEL_CONFIG, 0x01);
+	
+	//����Ĵ��룺����z����ٶ�ƫ����
+	int i;
+	int16_t _data;
+	HAL_Delay(1000); //��MPU�ȶ�֮���ٲ� 
+	for(i=1;i<=10;i++)
+	{
+		_data=Get_MPU_Data(GYRO_ZOUT_H);
+		//��Ҫ��Get_MPU_Data���ص�int16_t��������ֱ�Ӹ�ֵ��float�������ݣ���Ƭ�������������ת����Ҫͨ���м������ֵ���� 
+		gyro_z_offset+=_data;
+		HAL_Delay(100); //100ms������׼һЩ 
+	}
+	gyro_z_offset/=10;
+	printf("offset:%f",gyro_z_offset);
+	/*ע��MPU6050��õ�ԭʼ���ݴ���ƫ���������ٶ�Ϊ0ʱ��MPU6050�ļĴ����ж��������ݲ�Ϊ0����
+	��ͨ��ȡ���ɴ�ƽ���ķ������ƫ������Ȼ��ÿ�β�����ȡԭʼ����֮���ȥƫ����*/
+	
+}
+/*-----MPU Part end-----*/
 
 /* USER CODE END 0 */
 
@@ -261,7 +275,7 @@ void PIDInit(PID *pp){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	setInitHandle(&huart3);
+	InitMPU6050();
 	MessageInfo* message=(MessageInfo*)malloc(sizeof(MessageInfo));
 	CarMove* carmove=(CarMove*)malloc(sizeof(CarMove));
 	uint8_t isA=(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_2)?1:0);
@@ -271,14 +285,12 @@ int main(void)
 		x[i]=0;y[i]=0;
 	}
 	float angle_error;
-	
 	vector* myvector=(vector*)malloc(sizeof(vector));
-	vector* desvector=(vector*)malloc(sizeof(vector));  
-	PID* pidl=malloc(sizeof(PID));
-	PID* pidr=malloc(sizeof(PID));
-	PIDInit(pidl);
-	PIDInit(pidr);
-	int ldu=0,rdu=0;
+	vector* desvector=(vector*)malloc(sizeof(vector)); 
+
+	int delta=0;
+	int leftV=90,rightV=90,leftv=0,rightv=0;  //V-ƽ���ٶ�, v-��ǰ�����ٶ�
+	int leftpwm=0,rightpwm=0;  //��ǰpwm
 	
   /* USER CODE END 1 */
 
@@ -311,7 +323,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	uint8_t a[]="--This is a test message.--\r\n";
 	printf("%s",a);  //send a test message
-	HAL_UART_Receive_IT(&huart1,pitext,3);
+	HAL_UART_Receive_IT(&huart1,pitext,4);
 	/*
 	HAL_UART_Transmit(&huart3,"AT\r\n",4,100);
 	HAL_UART_Transmit(&huart2,"AT\r\n",4,100);
@@ -324,47 +336,49 @@ int main(void)
 	HAL_UART_Transmit(&huart2,"AT+RST\r\n",8,100);
 	HAL_UART_Transmit(&huart3,"AT+RST\r\n",8,100);
 	HAL_Delay(3000);
-	
+	*/
 	HAL_UART_Transmit(&huart2,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
 	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
 	HAL_Delay(5000);
 	
-  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.101\",20000\r\n",41,100);
-	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.101\",20000\r\n",41,100);
+  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.105\",20000\r\n",41,100);
+	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.105\",20000\r\n",41,100);
 	HAL_Delay(3000);
-	*/
+	
   HAL_TIM_Base_Start_IT(&htim1);
 	HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
 	HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_2);
+	
+	HAL_UART_Receive_IT(&huart2,receive,1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	
-	HAL_UART_Receive_IT(&huart2,receive,1);
+
   while (1)
   {
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
 		if (pirefreshed==1){
-			if (pitext[0]==49){
-				printf("%s",pitext);
+			if (pitext[0]==48){
+				delta = (pitext[1]-48)*100 + (pitext[2]-48)*10 + (pitext[3]-48);
+			}
+			else{
+				delta = -((pitext[1]-48)*100 + (pitext[2]-48)*10 + (pitext[3]-48));
 			}
 			pirefreshed=0;
 		}
 		uint8_t pretype=carmove->type;
-		if (refreshed==1||1){
-			/*
+		if (refreshed==1){
 			msgrefresh((char*)text,message,isA);
-			message->oppo_x = 0;
-			message->oppo_y = 0;
-			printf("\nmy_x=%d,my_y=%d,oppo_x=%d,oppo_y=%d,passengerNum=%d\n",
+			refreshed=0;
+			printf("\nmy_x=%d my_y=%d oppo_x=%d oppo_y=%d passengerNum=%d\n",
 			message->my_x,message->my_y,message->oppo_x,message->oppo_y,message->passengerNum);
 			for (int i=0;i<message->passengerNum;i++){
-				printf("pass_status=%hhd,xs_pos=%d,ys_pos=%d,xe_pos=%d,ye_pos=%d\n",
+				printf("pass_status=%hhd xs_pos=%d ys_pos=%d xe_pos=%d ye_pos=%d\n",
 				message->pass_status[i],message->xs_pos[i],message->ys_pos[i],message->xe_pos[i],message->ye_pos[i]);
 			}
 			for (int i=4;i>0;i--){
@@ -373,20 +387,14 @@ int main(void)
 			}
 			x[0]=message->my_x;
 			y[0]=message->my_y;
-			refreshed=0;
-			*/
-			printf("ready");
-			message->my_x=214;message->my_y=183;message->oppo_x=0;message->oppo_y=0;message->passengerNum=2;
-			message->pass_status[0]=0;message->xs_pos[0]=16;message->ys_pos[0]=205;message->xe_pos[0]=4;
-			message->ye_pos[0]=133;message->pass_status[1]=0;message->xs_pos[1]=7;message->ys_pos[1]=170;
-			message->xe_pos[1]=31;message->ye_pos[1]=14;
-			*carmove = GetNextMove(*message);
+			
+			*carmove=GetNextMove(*message);
+			
+			//carmove->type=1;
 			if (carmove->type==0){
-				printf("type=0");
+				go(0,0);
 			}
-			if (carmove->type==1){
-				printf("type=1 x=%d y=%d dis=%f  mm",carmove->dest_x,carmove->dest_y, carmove->dis);
-			}
+<<<<<<< HEAD
 			if (carmove->type==2){
 				printf("type=2 angle=%d dis=%f mm",carmove->angle, carmove->dis);
 			}
@@ -532,7 +540,107 @@ int main(void)
 						}
 					}
 				}
+=======
+			if (carmove->type==1){  //go straight
+				if (delta>=0){
+					leftv = leftV - delta*0.08;
+					rightv = rightV - delta*0.08 - delta*0.1;
+				}
+				else{
+					leftv = leftV + delta*0.08 + delta*0.1;
+					rightv = rightV + delta*0.08;
+				}
+				//printf("leftv=%d rightv=%d",leftv,rightv);
+				leftpwm = leftv + (leftv - leftu)*0.5;
+				rightpwm = rightv + (rightv - rightu)*0.5;
+				if (leftpwm>100) leftpwm=100;
+				if (leftpwm<30) leftpwm=30;
+				if (rightpwm>100) rightpwm=100;
+				if (rightpwm<30) rightpwm=30;
+				//printf("leftpwm=%d rightpwm=%d",leftpwm,rightpwm);
+				go(leftpwm,rightpwm);
+				//calculate angle
+				if (pretype!=1){
+					for (int i=0;i<5;i++){
+						x[i]=0;y[i]=0;
+					}
+				}
+
+				desvector->x = carmove->dest_x - message->my_x;
+				desvector->y = carmove->dest_y - message->my_y;
+				cal_vecangle(desvector);	
+				uint8_t maxn=4;
+				while(x[maxn]==0) maxn--;
+				maxn++;
+				if (maxn==1) myvector->angle = desvector->angle;
+				else myvector->angle = cal_myangle(x,y,maxn);
+				angle_error = myvector->angle - desvector->angle;
+				if (angle_error<=-180) angle_error+=360;
+				if (angle_error>180) angle_error-=360;
+				printf("myangle=%f\ndesangle=%f\nerror=%f\n\n",myvector->angle,desvector->angle,angle_error);
+				
+				if (abs(angle_error)==0||carmove->r<10){
+					go(98,100);
+				}
+				else if ((angle_error>0)&&(angle_error<=5)){  
+					go(98,95);
+				}
+				else if ((angle_error<0)&&(angle_error>=-5)){ 
+					go(93,100);
+				}
+				else if ((angle_error>5)&&(angle_error<=15)){ 
+					go(98,85);
+				}
+				else if ((angle_error<-5)&&(angle_error>=-15)){ 
+					go(83,100);
+				}
+				else if (angle_error>15){
+					go(100,70);
+				}
+				else if(angle_error<-15){
+					go(70,100);
+				}
 			}
+
+			if(type==2)//turning without camera
+			{
+				//value
+				float type2_feedback=1.0;
+				double type2_angle=0;
+				int type2_radius1=10;
+				int type2_radius2=20;
+				int type2_a,type2_b;
+				//radius
+				if(carmove->radius<type2_radius1) {type2_a=10; type2_b=90;}
+				else if(carmove->radius>type2_radius1) {type2_a=70; type2_b=100;}
+				else {type2_a=40; type2_b=90;}
+				//angle
+				type2_angle=0;
+				if(carmove->angle>=0){
+					go(type2_a,type2_b);
+					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
+						data=Get_MPU_Data(GYRO_ZOUT_H);
+						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
+						type2_angle+=angle_speed*0.05*type2_feedback;
+						HAL_Delay(50);
+					}
+				}
+				else {
+					go(type2_b,type2_a);
+					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
+						data=Get_MPU_Data(GYRO_ZOUT_H);
+						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
+						type2_angle+=angle_speed*0.05*type2_feedback;
+						HAL_Delay(50);
+					}
+				}
+				go(100,100);
+>>>>>>> b7392b2b64af353f2d0dbfe154d908adfe5e0ed1
+			}
+//需调整量：radius1,radius2,以及其对应的占空比,feedback,积分间隔
+
+
+		}
 		}
 	}
   /* USER CODE END 3 */
@@ -868,14 +976,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		temptext[current]=receive[0];
 		current++;
 		if (temptext[current-1]==0x0A && temptext[current-2]==0x0D){
-			if(current<64) current=0;
-			else{
-				for(int i=0;i<64;i++){
-					text[i]=temptext[current-64+i];
-				}
-				current=0;
-				refreshed=1;
+			for(int i=0;i<64;i++){
+				text[i]=temptext[current-64+i];
 			}
+		  current=0;
+			refreshed=1;
 		}
 		HAL_UART_Receive_IT(&huart2,receive,1);
 	}
@@ -888,9 +993,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim->Instance==TIM1){
-	  float T=0.1;
-		rightfre = (int)(__HAL_TIM_GET_COUNTER(&htim3))/(8*T);
-		leftfre = (int)(__HAL_TIM_GET_COUNTER(&htim2))/(8*T);
+		rightu = (int)(__HAL_TIM_GET_COUNTER(&htim3))*fre*98/(160*8);
+		leftu = (int)(__HAL_TIM_GET_COUNTER(&htim2))*fre*98/(160*8);
 		__HAL_TIM_SET_COUNTER(&htim2, 0);
 		__HAL_TIM_SET_COUNTER(&htim3, 0);	
 	}	

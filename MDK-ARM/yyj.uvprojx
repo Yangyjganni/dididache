@@ -365,7 +365,11 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
+<<<<<<< HEAD
               <IncludePath>../Inc;            ../Drivers/STM32F1xx_HAL_Driver/Inc;            ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;            ../Drivers/CMSIS/Device/ST/STM32F1xx/Include;            ../Drivers/CMSIS/Include;            ..\Car-Pilot-master</IncludePath>
+=======
+              <IncludePath>../Inc;           ../Drivers/STM32F1xx_HAL_Driver/Inc;           ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;           ../Drivers/CMSIS/Device/ST/STM32F1xx/Include;           ../Drivers/CMSIS/Include;           ..\Car-Pilot-master</IncludePath>
+>>>>>>> b7392b2b64af353f2d0dbfe154d908adfe5e0ed1
             </VariousControls>
           </Cads>
           <Aads>
@@ -476,6 +480,19 @@
               <FileType>1</FileType>
               <FilePath>..\Src\utils.c</FilePath>
             </File>
+<<<<<<< HEAD
+=======
+            <File>
+              <FileName>decodemessage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Car-Pilot-master\decodemessage.c</FilePath>
+            </File>
+            <File>
+              <FileName>decodemessage.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Car-Pilot-master\decodemessage.h</FilePath>
+            </File>
+>>>>>>> b7392b2b64af353f2d0dbfe154d908adfe5e0ed1
           </Files>
         </Group>
         <Group>
