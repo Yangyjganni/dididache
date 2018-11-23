@@ -2,6 +2,7 @@
 #include <string.h>
 #include "index_map.h"
 #include "FindRoad.h"
+#include "decodemessage.h"
 
 
 void testDij()
@@ -36,17 +37,63 @@ void testFindRoad()
         while(x1 != x2 && y1 != y2) {
             CarMove curMove = get_next_move(x1, y1, x2, y2);
             printf("type: %d moveDis: %f turn_angle %d start_x:%d start_y:%d dest_x:%d dest_y:%d turn_r: %f\n", curMove.type,
-                    curMove.dis, curMove.angle, curMove.start_x, curMove.start_y, curMove.dest_x, curMove.dest_y, curMove.r);
+                   curMove.dis, curMove.angle, curMove.start_x, curMove.start_y, curMove.dest_x, curMove.dest_y, curMove.r);
             x1 = curMove.dest_x; y1 = curMove.dest_y;
         }
     }while(x1 >= 0);
 }
 
+void testFwrite()
+{
+    CarMove c1;
+    memset(&c1, 0, sizeof(c1));
+    c1.dest_x = 2;
+    c1.dis = 1.23;
+    FILE *test_fp = fopen("./dump.txt", "w");
+    if(test_fp != NULL)
+        fwrite(&c1, 1, sizeof(c1), test_fp);
+    else printf("can not create file");
+}
+
+void testDecodeMessage()
+{
+    MessageInfo msg;
+    CarMove move;
+    while(1) {
+        msg.my_x = 214, msg.my_y = 183;
+        msg.oppo_x = 0, msg.oppo_y = 0;
+        msg.passengerNum = 2;
+        memset(msg.pass_status, 0, 8);
+        msg.pass_status[2] = 32;
+        msg.xs_pos[0] = 16, msg.ys_pos[0] = 205;
+        msg.xe_pos[0] = 4, msg.ye_pos[0] = 133;
+
+        msg.xs_pos[1] = 7, msg.ys_pos[1] = 170;
+        msg.xe_pos[1] = 31, msg.ye_pos[1] = 14;
+
+        msg.xs_pos[2] = 205, msg.ys_pos[2] = 239;
+        msg.xe_pos[2] = 186, msg.ye_pos[2] = 182;
+
+        msg.xs_pos[3] = 239, msg.ys_pos[3] = 205;
+        msg.xe_pos[3] = 182, msg.ye_pos[3] = 186;
+
+        msg.xs_pos[4] = 257, msg.ys_pos[4] = 133;
+        msg.xe_pos[4] = 92, msg.ye_pos[4] = 254;
+        move = GetNextMove(msg);
+        printf("\n");
+        printf("dis %f\n", move.dis);
+    }
+
+}
+
+
 
 int main() {
     //FindAllDis();
-    testFindRoad();
+    //testFwrite();
+    //testFindRoad();
     //testDij();
+    testDecodeMessage();
     printf("END\n");
     //printf("Hello, World!\n");
     return 0;

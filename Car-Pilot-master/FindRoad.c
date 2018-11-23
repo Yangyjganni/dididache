@@ -39,6 +39,9 @@ EdgeList initEdgeList(int num)
 {
     EdgeList tempList;
 		static int edgePoolTop = 0;
+#ifdef PRINT_INFO
+		printf("prepare to malloc %d Edge total %d Bytes \n", num, num * sizeof(Edge) );
+#endif
     tempList.data = (Edge*)malloc(num * sizeof(Edge));
     tempList.num = num;
     return tempList;
