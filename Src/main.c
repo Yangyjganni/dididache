@@ -246,9 +246,6 @@ uint16_t Get_MPU_Data(uint8_t REG_Address) //Ҫ��ȡ��2�ֽڵ����
 
 void InitMPU6050()
 {
-	#ifndef zhushi
-	printf("start mpu6050 init");
-	#endif
 	Single_WriteI2C(PWR_MGMT_1, 0x00);	//�������״�?
 	Single_WriteI2C(SMPLRT_DIV, 0x07);
 	Single_WriteI2C(CONFIG, 0x06);
