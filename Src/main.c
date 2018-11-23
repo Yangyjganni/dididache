@@ -390,6 +390,9 @@ int main(void)
 			if (carmove->type==2){
 				printf("type=2 angle=%d dis=%f mm",carmove->angle, carmove->dis);
 			}
+			if (carmove->type==3){
+				
+			} 
 			}
 		}
   /* USER CODE END 3 */
