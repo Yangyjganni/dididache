@@ -59,29 +59,31 @@ void testDecodeMessage()
 {
     MessageInfo msg;
     CarMove move;
-    if(1) {
-        msg.my_x = 183, msg.my_y = 43;
-        msg.oppo_x = 0, msg.oppo_y = 0;
-        msg.passengerNum = 2;
-        memset(msg.pass_status, 0, 8);
-        msg.pass_status[2] = 32;
-        msg.xs_pos[0] = 57, msg.ys_pos[0] = 265;
-        msg.xe_pos[0] = 147, msg.ye_pos[0] = 172;
+    msg.my_x = 67, msg.my_y = 189;
+    msg.oppo_x = 0, msg.oppo_y = 0;
+    msg.passengerNum = 2;
+    memset(msg.pass_status, 0, 8);
+    msg.pass_status[2] = 0;
+    msg.xs_pos[0] = 160, msg.ys_pos[0] = 177;
+    msg.xe_pos[0] = 218, msg.ye_pos[0] = 206;
 
-        msg.xs_pos[1] = 251, msg.ys_pos[1] = 103;
-        msg.xe_pos[1] = 30, msg.ye_pos[1] = 205;
+    msg.xs_pos[1] = 31, msg.ys_pos[1] = 49;
+    msg.xe_pos[1] = 241, msg.ye_pos[1] = 69;
 
-        msg.xs_pos[2] = 205, msg.ys_pos[2] = 239;
-        msg.xe_pos[2] = 186, msg.ye_pos[2] = 182;
+    msg.xs_pos[2] = 205, msg.ys_pos[2] = 239;
+    msg.xe_pos[2] = 186, msg.ye_pos[2] = 182;
 
-        msg.xs_pos[3] = 239, msg.ys_pos[3] = 205;
-        msg.xe_pos[3] = 182, msg.ye_pos[3] = 186;
+    msg.xs_pos[3] = 239, msg.ys_pos[3] = 205;
+    msg.xe_pos[3] = 182, msg.ye_pos[3] = 186;
 
-        msg.xs_pos[4] = 257, msg.ys_pos[4] = 133;
-        msg.xe_pos[4] = 92, msg.ye_pos[4] = 254;
+    msg.xs_pos[4] = 257, msg.ys_pos[4] = 133;
+    msg.xe_pos[4] = 92, msg.ye_pos[4] = 254;
+    while(1) {
+
         move = GetNextMoveWithAngle(msg, -1);
+        msg.my_x = move.dest_x, msg.my_y = move.dest_y;
         printf("\n");
-        printf("dis %f\n", move.dis);
+        printf("type %d dest_x %d dest_y %d angle %d move.dis %f\n", move.type,  move.dest_x, move.dest_y,  move.angle, move.dis);
     }
 
 }

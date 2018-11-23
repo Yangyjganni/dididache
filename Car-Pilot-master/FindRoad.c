@@ -210,7 +210,7 @@ int isType3Move(int x1, int y1, int x2, int y2)
 {
     if(getDis(x1, y1, points_x[47], points_y[47]) < MIN_DIS && getDis(x2, y2, points_x[18], points_y[18]) < MIN_DIS)
         return 1;
-    if(getDis(x1, y1, points_x[37], points_y[37]) < MIN_DIS && getDis(x2, y2, points_x[46], points_y[46]) < MIN_DIS)
+    if(getDis(x1, y1, points_x[38], points_y[38]) < MIN_DIS && getDis(x2, y2, points_x[46], points_y[46]) < MIN_DIS)
         return 1;
     return 0;
 }
@@ -368,13 +368,23 @@ MoveList find_road(int st_x, int st_y, int ed_x, int ed_y)
     return moveList;
 }
 
+int getNearestPoint(int x1, int y1, int edgeIndex)
+{
+    int _st = e_be[edgeIndex - 1], _ed = e_ed[edgeIndex - 1];
+    if(getDis(x1, y1, points_x[_st - 1], points_y[_st - 1]) < MIN_DIS)
+        return _st;
+    if(getDis(x1, y1, points_x[_ed - 1], points_y[_ed - 1]) < MIN_DIS)
+        return _ed;
+    return _ed;
+}
+
 MoveList find_road_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curAngle)
 {
 #ifdef PRINT_INFO
     printf("begin find_road \n");
 #endif
     int be_edge_index = use_map[st_x][st_y], ed_edge_index = use_map[ed_x][ed_y];
-    int s1 = e_ed[be_edge_index - 1], s2 = e_be[ed_edge_index - 1];
+    int s1 = getNearestPoint(st_x, st_y, be_edge_index), s2 = e_be[ed_edge_index - 1];
     int haveFirstMove = 0, haveLastMove = 0;
     short angle1, angle2;
     MoveList moveList;
