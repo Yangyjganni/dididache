@@ -12,14 +12,11 @@ const short SHORT_INF = (short)0x0f0f;
 
 short edgeMap[max_points_num + 1][max_points_num + 1];
 
-static int hahahaTest = 0;
 
 CarMove movePool[CARMOVE_POOL_LEN];
 
 static int carMovePoolTop = 0;
 
-
-static int xixixi = 0;
 
 Edge getEdge(int a, int b, int w)
 {

@@ -60,5 +60,4 @@ void msgrefresh(char* b, struct _MessageInfo* msg, uint8_t who){
  Ascore=a[33]*256+a[34];
  Bscore=a[35]*256+a[36];
  */
-
 }
