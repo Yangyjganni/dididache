@@ -390,11 +390,151 @@ int main(void)
 			if (carmove->type==2){
 				printf("type=2 angle=%d dis=%f mm",carmove->angle, carmove->dis);
 			}
-			if (carmove->type==3){
+			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
+			{
+				int x[5],y[5];
+				uint8_t i,max_i=-1; //max_i表示在x和y数组中存储了数据的最大下标
+				/*for(i=0;i<=4;i++){
+					x[i]=0; y[i]=0;
+				}*/
+				#define SLOWWHEELSPEED 70
+				#define FASTWHEELSPEED 100
+				//快轮、慢轮默认转速（调参决定）
+				//#define ABS_MINUS(a,b) (((a)>=(b))?((a)-(b)):((b)-(a)))
+				#define POWER2(x) ((x)*(x))
+				int center_x,center_y; //转弯中心
+				float average_offset; //到圆周上的平均偏移量
 				
-			} 
+				if(116==carmove->dest_x) //point 18b to 26s 
+				{
+					center_x=55; center_y=290;
+					go(SLOWWHEELSPEED,FASTWHEELSPEED);
+					
+					while(message->my_x<=116)
+					{
+						if(0==refreshed)continue;
+						refreshed=0;
+						for(i=4;i>0;i--){
+							x[i]=x[i-1];
+							y[i]=y[i-1];
+						}
+						if(max_i<4) max_i++;
+						x[0]=message->my_x;
+						y[0]=message->my_y;
+						if(max_i>=1) carmove->angle=cal_myangle(x,y,max_i);
+						
+						if(4*x[0]+3*y[0] >= 1090) //进入第二段圆弧
+						{
+							center_x=115;
+							center_y=210;
+							max_i=-1; //重新记录行驶途中各点
+						}
+						
+						average_offset=0.0;
+						for(i=0;i<=max_i;i++)
+							average_offset+=sqrt(1.0*(POWER2(x[i]-center_x)+POWER2(y[i]-center_y)))-50; //转弯半径50
+						average_offset/=(max_i+1);
+						if(average_offset<-6.0) //靠近圆心
+						{
+							if(55==center_x) //前半段圆弧
+							{
+								go(SLOWWHEELSPEED+10,FASTWHEELSPEED); //左轮加速
+							}
+							else //后半段圆弧
+							{
+								go(FASTWHEELSPEED,SLOWWHEELSPEED+10); //右轮加速
+							}
+						}
+						else if(average_offset>6.0)
+						{
+							if(55==center_x) //前半段圆弧
+							{
+								go(SLOWWHEELSPEED,FASTWHEELSPEED+10); //右轮加速
+							}
+							else //后半段圆弧
+							{
+								go(FASTWHEELSPEED+10,SLOWWHEELSPEED); //左轮加速
+							}
+						}
+						else {
+							if(55==center_x) //前半段圆弧
+							{
+								go(SLOWWHEELSPEED,FASTWHEELSPEED); //右轮加速
+							}
+							else //后半段圆弧
+							{
+								go(FASTWHEELSPEED,SLOWWHEELSPEED); //左轮加速
+							}
+						}
+					}
+				}
+				else //point 27s to 19a
+				{
+					center_x=210; center_y=115;
+					go(FASTWHEELSPEED,SLOWWHEELSPEED);
+					
+					while(message->my_x<=116)
+					{
+						if(0==refreshed)continue;
+						refreshed=0;
+						for(i=4;i>0;i--){
+							x[i]=x[i-1];
+							y[i]=y[i-1];
+						}
+						if(max_i<4) max_i++;
+						x[0]=message->my_x;
+						y[0]=message->my_y;
+						if(max_i>=1) carmove->angle=cal_myangle(x,y,max_i);
+						
+						if(3*x[0]+4*y[0] <= 1090) //进入第二段圆弧
+						{
+							center_x=290;
+							center_y=55;
+							max_i=-1; //重新记录行驶途中各点
+						}
+						
+						average_offset=0.0;
+						for(i=0;i<=max_i;i++)
+							average_offset+=sqrt(1.0*(POWER2(x[i]-center_x)+POWER2(y[i]-center_y)))-50; //转弯半径50
+						average_offset/=(max_i+1);
+						if(average_offset<-6.0) //靠近圆心
+						{
+							if(210==center_x) //前半段圆弧
+							{
+								go(FASTWHEELSPEED,SLOWWHEELSPEED+10);
+							}
+							else //后半段圆弧
+							{
+								go(SLOWWHEELSPEED+10,FASTWHEELSPEED);
+							}
+						}
+						else if(average_offset>6.0)
+						{
+							if(210==center_x) //前半段圆弧
+							{
+								go(FASTWHEELSPEED+10,SLOWWHEELSPEED);
+							}
+							else //后半段圆弧
+							{
+								go(SLOWWHEELSPEED,FASTWHEELSPEED+10);
+							}
+						}
+						else
+						{
+							if(210==center_x) //前半段圆弧
+							{
+								go(FASTWHEELSPEED,SLOWWHEELSPEED);
+							}
+							else //后半段圆弧
+							{
+								go(SLOWWHEELSPEED,FASTWHEELSPEED);
+							}
+						}
+					}
+				}
 			}
 		}
+	}
   /* USER CODE END 3 */
 
 }
