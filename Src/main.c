@@ -44,7 +44,8 @@
 #include <math.h>
 #include "FindRoad.h"
 #include "decodemessage.h"
-
+#include "utils.h"
+#define zhushi
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -54,6 +55,7 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
@@ -75,6 +77,7 @@ static void MX_TIM4_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_TIM8_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -94,8 +97,7 @@ uint8_t pitext[5];
 volatile uint8_t pirefreshed=0;
 uint8_t fre=10;  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æµï¿½ï¿½
 volatile int leftu=0,rightu=0;  //ï¿½ï¿½Ç°ï¿½Ù¶ï¿½(pwmï¿½ï¿½Ê¾)
-
-
+volatile uint8_t TimeUp=0;
 
 struct _vector{
 	int x,y;
@@ -119,8 +121,9 @@ float cal_vecangle(vector* a){
 	return a->angle;
 }
 
-float cal_myangle(int* x,int* y,int maxn){
+short cal_myangle(int* x,int* y,int maxn){
 	//(-180,180]
+	short _angle;
 	int xi=0,x2=0,yi=0,xy=0;
 	float k;
 	for(int i = 0; i < maxn; i++){
@@ -132,14 +135,17 @@ float cal_myangle(int* x,int* y,int maxn){
 	if (xi * xi - x2 * maxn==0) return 90;
 	else{
 		k = (yi * xi - xy * maxn)*1.0 / (xi * xi - x2 * maxn);
-		printf("\nk=%f\n",k);
-		printf("\natan(k)=%f",atan(k));
-		if (x[0]-x[maxn-1]>=0) return atan(k)*180/3.1416;
+		//printf("\nk=%f\n",k);
+		//printf("\natan(k)=%f",atan(k));
+		if (x[0]-x[maxn-1]>=0) _angle = atan(k)*180/3.1416;
 		else{
-			if (y[0]-y[maxn-1]>=0) return atan(k)*180/3.1416 + 180;
-			else return atan(k)*180/3.1416 - 180;
+			if (y[0]-y[maxn-1]>=0) _angle = atan(k)*180/3.1416 + 180;
+			else _angle = atan(k)*180/3.1416 - 180;
 		}
 	}
+	if(_angle >= 360) _angle-= 360;
+	else if(_angle < 0) _angle+= 360;
+	return _angle;
 }
 
 void go(uint8_t l,uint8_t r){
@@ -208,17 +214,17 @@ void PIDInit(PID *pp){
 #define FS_SEL_250 0x0
 #define FS_SEL FS_SEL_2000
 #define GYRO_SCALE_RANGE 2000
-//ï¿½ï¿½Ñ¡ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2000ï¿½È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶È¼ï¿½ï¿½ï¿½ï¿½32767Ê±ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½Ù¶ï¿½2000ï¿½ï¿½/sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½Òªï¿½É¸ï¿½ï¿½ï¿½ï¿½Ì£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½2000ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½Ì£ï¿½1000,500,250ï¿½ï¿½
+//ï¿½ï¿½Ñ¡ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2000ï¿½È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶È¼ï¿½ï¿½ï¿½ï¿?32767Ê±ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½Ù¶ï¿½2000ï¿½ï¿½/sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½Òªï¿½É¸ï¿½ï¿½ï¿½ï¿½Ì£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿?2000ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½Ì£ï¿½1000,500,250ï¿½ï¿½
 
 int16_t data; //ï¿½ï¿½MPU6050Ö±ï¿½Ó¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½×¢ï¿½â£ºsigned int ï¿½ï¿½ï¿½ï¿½unsignedï¿½ï¿½ï¿½ï¿½
-float angle_speed; //ï¿½É½Ç¶È¸ï¿½ï¿½Ý¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¡ï¿½Öµ(Full Scale Range)ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½Ä½ï¿½ï¿½Ù¶ï¿½
+float angle_speed; //ï¿½É½Ç¶È¸ï¿½ï¿½Ý¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¡ï¿½Öµ(Full Scale Range)ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½Ä½ï¿½ï¿½Ù¶ï¿?
 float angle=0.0; //ï¿½ï¿½ï¿½ÖµÃµï¿½ï¿½Ä½Ç¶ï¿½
-float gyro_z_offset=0.0; //zï¿½ï¿½ï¿½ï¿½Ù¶È²ï¿½ï¿½ï¿½ÖµÆ«ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½InitMPU6050()ï¿½ï¿½ï¿½ï¿½)
+float gyro_z_offset=0.0; //zï¿½ï¿½ï¿½ï¿½Ù¶È²ï¿½ï¿½ï¿½ÖµÆ«ï¿½ï¿½ï¿½ï¿?(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½InitMPU6050()ï¿½ï¿½ï¿½ï¿½)
 
 void Single_WriteI2C(uint8_t REG_Address, uint8_t REG_Data) //REG_Address ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ uint8_t/uint16_t?
 {
 	HAL_I2C_Mem_Write(&hi2c1, SlaveAddress, REG_Address ,1 ,&REG_Data, 1, 1000);
-	//×¢ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ MemAddSize ï¿½ï¿½Ê¾ÒªÐ´ï¿½ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½Ä´ï¿½Ð¡
+	//×¢ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ MemAddSize ï¿½ï¿½Ê¾ÒªÐ´ï¿½ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½Ä´ï¿½Ð?
 }
 
 uint8_t Single_ReadI2C(uint8_t REG_Address) //REG_Address ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ uint8_t/uint16_t?
@@ -240,13 +246,13 @@ uint16_t Get_MPU_Data(uint8_t REG_Address) //Òªï¿½ï¿½È¡ï¿½ï¿½2ï¿½Ö½Úµï¿½ï¿½ï¿½ï¿
 
 void InitMPU6050()
 {
-	Single_WriteI2C(PWR_MGMT_1, 0x00);	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
+	Single_WriteI2C(PWR_MGMT_1, 0x00);	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì?
 	Single_WriteI2C(SMPLRT_DIV, 0x07);
 	Single_WriteI2C(CONFIG, 0x06);
 	Single_WriteI2C(GYRO_CONFIG, FS_SEL);
 	Single_WriteI2C(ACCEL_CONFIG, 0x01);
 	
-	//ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ë£ºï¿½ï¿½ï¿½ï¿½zï¿½ï¿½ï¿½ï¿½Ù¶ï¿½Æ«ï¿½ï¿½ï¿½ï¿½
+	//ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ë£ºï¿½ï¿½ï¿½ï¿½zï¿½ï¿½ï¿½ï¿½Ù¶ï¿½Æ«ï¿½ï¿½ï¿½ï¿?
 	int i;
 	int16_t _data;
 	HAL_Delay(1000); //ï¿½ï¿½MPUï¿½È¶ï¿½Ö®ï¿½ï¿½ï¿½Ù²ï¿½ 
@@ -259,7 +265,7 @@ void InitMPU6050()
 	}
 	gyro_z_offset/=10;
 	printf("offset:%f",gyro_z_offset);
-	/*×¢ï¿½ï¿½MPU6050ï¿½ï¿½Ãµï¿½Ô­Ê¼ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½Îª0Ê±ï¿½ï¿½MPU6050ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²ï¿½Îª0ï¿½ï¿½ï¿½ï¿½
+	/*×¢ï¿½ï¿½MPU6050ï¿½ï¿½Ãµï¿½Ô­Ê¼ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½Î?0Ê±ï¿½ï¿½MPU6050ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²ï¿½Îª0ï¿½ï¿½ï¿½ï¿½
 	ï¿½ï¿½Í¨ï¿½ï¿½È¡ï¿½ï¿½ï¿½É´ï¿½Æ½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È»ï¿½ï¿½Ã¿ï¿½Î²ï¿½ï¿½ï¿½ï¿½ï¿½È¡Ô­Ê¼ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½È¥Æ«ï¿½ï¿½ï¿½ï¿½*/
 	
 }
@@ -275,7 +281,6 @@ void InitMPU6050()
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	InitMPU6050();
 	MessageInfo* message=(MessageInfo*)malloc(sizeof(MessageInfo));
 	CarMove* carmove=(CarMove*)malloc(sizeof(CarMove));
 	uint8_t isA=(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_2)?1:0);
@@ -289,7 +294,7 @@ int main(void)
 	vector* desvector=(vector*)malloc(sizeof(vector)); 
 
 	int delta=0;
-	int leftV=90,rightV=90,leftv=0,rightv=0;  //V-Æ½ï¿½ï¿½ï¿½Ù¶ï¿½, v-ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+	int leftV=90,rightV=90,leftv=0,rightv=0;  //V-Æ½ï¿½ï¿½ï¿½Ù¶ï¿½, v-ï¿½ï¿½°ï¿½ï¿½ïÇ¿½ï¿½ï¿½Ù¶ï¿½
 	int leftpwm=0,rightpwm=0;  //ï¿½ï¿½Ç°pwm
 	
   /* USER CODE END 1 */
@@ -320,11 +325,14 @@ int main(void)
   MX_I2C1_Init();
   MX_USART3_UART_Init();
   MX_USART1_UART_Init();
+  MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
+	setInitHandle(&huart3);
 	uint8_t a[]="--This is a test message.--\r\n";
 	printf("%s",a);  //send a test message
+	InitMPU6050();
 	HAL_UART_Receive_IT(&huart1,pitext,4);
-	/*
+#ifndef zhushi
 	HAL_UART_Transmit(&huart3,"AT\r\n",4,100);
 	HAL_UART_Transmit(&huart2,"AT\r\n",4,100);
 	HAL_Delay(3000);
@@ -336,15 +344,18 @@ int main(void)
 	HAL_UART_Transmit(&huart2,"AT+RST\r\n",8,100);
 	HAL_UART_Transmit(&huart3,"AT+RST\r\n",8,100);
 	HAL_Delay(3000);
-	*/
+	/*
 	HAL_UART_Transmit(&huart2,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
 	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
-	HAL_Delay(5000);
+	*/
+	HAL_UART_Transmit(&huart2,"AT+CWJAP=\"sta-dpi\",\"IloveDPI\"\r\n",40,100);
+	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"sta-dpi\",\"IloveDPI\"\r\n",40,100);
+	HAL_Delay(8000);
 	
-  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.105\",20000\r\n",41,100);
-	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.105\",20000\r\n",41,100);
+  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.100\",20000\r\n",41,100);
+	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.100\",20000\r\n",41,100);
 	HAL_Delay(3000);
-	
+#endif
   HAL_TIM_Base_Start_IT(&htim1);
 	HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
 	HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
@@ -352,11 +363,28 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_2);
 	
 	HAL_UART_Receive_IT(&huart2,receive,1);
+	
+	if(1==isA) 
+	{
+		myvector->x=0;
+		myvector->y=0;
+		myvector->angle=0;
+	}
+	else
+	{
+		myvector->x=0;
+		myvector->y=0;
+		myvector->angle=0;
+	}
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
+	message->my_x=67;message->my_y=189;
+	message->oppo_x=0;message->oppo_y=0;message->passengerNum=2;
+	message->pass_status[0]=0;message->xs_pos[0]=113;message->ys_pos[0]=127;message->xe_pos[0]=218;
+	message->ye_pos[0]=206;message->pass_status[1]=0;message->xs_pos[1]=31;message->ys_pos[1]=49;
+	message->xe_pos[1]=241;message->ye_pos[1]=69;
   while (1)
   {
   /* USER CODE END WHILE */
@@ -372,15 +400,17 @@ int main(void)
 			pirefreshed=0;
 		}
 		uint8_t pretype=carmove->type;
-		if (refreshed==1){
-			msgrefresh((char*)text,message,isA);
+		if (1||refreshed==1){
+			//msgrefresh((char*)text,message,isA);
 			refreshed=0;
+			/*
 			printf("\nmy_x=%d my_y=%d oppo_x=%d oppo_y=%d passengerNum=%d\n",
 			message->my_x,message->my_y,message->oppo_x,message->oppo_y,message->passengerNum);
 			for (int i=0;i<message->passengerNum;i++){
 				printf("pass_status=%hhd xs_pos=%d ys_pos=%d xe_pos=%d ye_pos=%d\n",
 				message->pass_status[i],message->xs_pos[i],message->ys_pos[i],message->xe_pos[i],message->ye_pos[i]);
 			}
+			*/
 			for (int i=4;i>0;i--){
 				x[i]=x[i-1];
 				y[i]=y[i-1];
@@ -388,9 +418,28 @@ int main(void)
 			x[0]=message->my_x;
 			y[0]=message->my_y;
 			
-			*carmove=GetNextMove(*message);
+			short _angle;
+			uint8_t maxn=4;
+			while(x[maxn]==0) maxn--;
+			maxn++;
+			if (maxn==0||maxn==1) _angle = -1;
+			else _angle = cal_myangle(x,y,maxn);
+			_angle=-1;
 			
+			*carmove=GetNextMoveWithAngle(*message,_angle);
+			message->my_x = carmove->dest_x;
+			message->my_y = carmove->dest_y;
+			if (carmove->type==0){
+				printf("type=0");
+			}
+			if (carmove->type==1){
+				printf("type=1 x=%d y=%d dis=%f",carmove->dest_x,carmove->dest_y, carmove->dis);
+			}
+			if (carmove->type==2){
+				printf("type=2 angle=%d",carmove->angle);
+			}
 			//carmove->type=1;
+
 			if (carmove->type==0){
 				go(0,0);
 			}
@@ -417,89 +466,61 @@ int main(void)
 					for (int i=0;i<5;i++){
 						x[i]=0;y[i]=0;
 					}
-				}
-
-				desvector->x = carmove->dest_x - message->my_x;
-				desvector->y = carmove->dest_y - message->my_y;
-				cal_vecangle(desvector);	
-				uint8_t maxn=4;
-				while(x[maxn]==0) maxn--;
-				maxn++;
-				if (maxn==1) myvector->angle = desvector->angle;
-				else myvector->angle = cal_myangle(x,y,maxn);
-				angle_error = myvector->angle - desvector->angle;
-				if (angle_error<=-180) angle_error+=360;
-				if (angle_error>180) angle_error-=360;
-				printf("myangle=%f\ndesangle=%f\nerror=%f\n\n",myvector->angle,desvector->angle,angle_error);
-				
-				if (abs(angle_error)==0||carmove->r<10){
-					go(98,100);
-				}
-				else if ((angle_error>0)&&(angle_error<=5)){  
-					go(98,95);
-				}
-				else if ((angle_error<0)&&(angle_error>=-5)){ 
-					go(93,100);
-				}
-				else if ((angle_error>5)&&(angle_error<=15)){ 
-					go(98,85);
-				}
-				else if ((angle_error<-5)&&(angle_error>=-15)){ 
-					go(83,100);
-				}
-				else if (angle_error>15){
-					go(100,70);
-				}
-				else if(angle_error<-15){
-					go(70,100);
-				}
+				}			
 			}
 
-			if(carmove->type==2)//turning without camera
+			if(carmove->type==2 || carmove->type==4)//turning without camera
 			{
 				//value
-				float type2_feedback=1.0;
 				double type2_angle=0;
-				int type2_radius1=10;
-				int type2_radius2=20;
+				int type2_radius1=15;
+				int type2_radius2=28;
 				int type2_a,type2_b;
 				//radius
-				if(carmove->r<type2_radius1) {type2_a=10; type2_b=90;}
-				else if(carmove->r>type2_radius1) {type2_a=70; type2_b=100;}
-				else {type2_a=40; type2_b=90;}
+				if(carmove->r<type2_radius1) {type2_a=30; type2_b=98;}
+				else if(carmove->r>type2_radius1) {type2_a=55; type2_b=98;}
+				else {type2_a=85; type2_b=98;}
 				//angle
 				type2_angle=0;
+				#ifndef zhushi
+				HAL_TIM_Base_Start_IT(&htim8);
 				if(carmove->angle>=0){
-					go(type2_a,type2_b);
+					go(type2_b,type2_a);
 					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
+						if (TimeUp==0) continue;
+						TimeUp=0;
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
-						type2_angle+=angle_speed*0.05*type2_feedback;
-						HAL_Delay(50);
-					}
+						type2_angle+=angle_speed*0.01;
+					}					
 				}
 				else {
-					go(type2_b,type2_a);
+					go(type2_a,type2_b);
 					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
+						if (TimeUp==0) continue;
+						TimeUp=0; 
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
-						type2_angle+=angle_speed*0.05*type2_feedback;
-						HAL_Delay(50);
+						type2_angle+=angle_speed*0.01;
 					}
 				}
-				go(100,100);
+				HAL_TIM_Base_Stop_IT(&htim8);
+				#endif
+				go(0,0);
 			}
-//éœ€è°ƒæ•´é‡ï¼šradius1,radius2,ä»¥åŠå…¶å¯¹åº”çš„å ç©ºæ¯”,feedback,ç§¯åˆ†é—´éš”
+//éœ?è°ƒæ•´é‡ï¼šradius1,radius2,ä»¥åŠå…¶å¯¹åº”çš„å ç©ºæ¯?,feedback,ç§¯åˆ†é—´éš”
 			
 			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
 			{
-				int x[5],y[5];
-				uint8_t i,max_i=-1; //max_i±íÊ¾ÔÚxºÍyÊý×éÖÐ´æ´¢ÁËÊý¾ÝµÄ×î´óÏÂ±ê
-				/*for(i=0;i<=4;i++){
+				#ifndef zhushi
+				continue;
+				#endif
+				int8_t i,max_i=-1; //max_i±íÊ¾ÔÚxºÍyÊý×éÖÐ´æ´¢ÁËÊý¾ÝµÄ×î´óÏÂ±ê
+				for(i=0;i<=4;i++){
 					x[i]=0; y[i]=0;
-				}*/
-				#define SLOWWHEELSPEED 70
-				#define FASTWHEELSPEED 100
+				}
+				#define SLOWWHEELSPEED 83
+				#define FASTWHEELSPEED 98
 				//¿ìÂÖ¡¢ÂýÂÖÄ¬ÈÏ×ªËÙ£¨µ÷²Î¾ö¶¨£©
 				//#define ABS_MINUS(a,b) (((a)>=(b))?((a)-(b)):((b)-(a)))
 				#define POWER2(x) ((x)*(x))
@@ -514,6 +535,7 @@ int main(void)
 					while(message->my_x<=116)
 					{
 						if(0==refreshed)continue;
+						msgrefresh((char*)text,message,isA);
 						refreshed=0;
 						for(i=4;i>0;i--){
 							x[i]=x[i-1];
@@ -522,13 +544,15 @@ int main(void)
 						if(max_i<4) max_i++;
 						x[0]=message->my_x;
 						y[0]=message->my_y;
-						if(max_i>=1) carmove->angle=cal_myangle(x,y,max_i);
-						
+											
 						if(4*x[0]+3*y[0] >= 1090) //½øÈëµÚ¶þ¶ÎÔ²»¡
 						{
 							center_x=115;
 							center_y=210;
 							max_i=-1; //ÖØÐÂ¼ÇÂ¼ÐÐÊ»Í¾ÖÐ¸÷µã
+							for(i=0;i<=4;i++){
+								x[i]=0; y[i]=0;
+							}	
 						}
 						
 						average_offset=0.0;
@@ -574,9 +598,10 @@ int main(void)
 					center_x=210; center_y=115;
 					go(FASTWHEELSPEED,SLOWWHEELSPEED);
 					
-					while(message->my_x<=116)
+					while(message->my_y>=58)
 					{
 						if(0==refreshed)continue;
+						msgrefresh((char*)text,message,isA);
 						refreshed=0;
 						for(i=4;i>0;i--){
 							x[i]=x[i-1];
@@ -585,13 +610,16 @@ int main(void)
 						if(max_i<4) max_i++;
 						x[0]=message->my_x;
 						y[0]=message->my_y;
-						if(max_i>=1) carmove->angle=cal_myangle(x,y,max_i);
+						if(max_i>=1) myvector->angle=cal_myangle(x,y,max_i);
 						
 						if(3*x[0]+4*y[0] <= 1090) //½øÈëµÚ¶þ¶ÎÔ²»¡
 						{
 							center_x=290;
 							center_y=55;
 							max_i=-1; //ÖØÐÂ¼ÇÂ¼ÐÐÊ»Í¾ÖÐ¸÷µã
+							for(i=0;i<=4;i++){
+								x[i]=0; y[i]=0;
+							}
 						}
 						
 						average_offset=0.0;
@@ -634,8 +662,6 @@ int main(void)
 					}
 				}
 			}
-
-
 		}
 	}
   /* USER CODE END 3 */
@@ -858,6 +884,40 @@ static void MX_TIM4_Init(void)
 
 }
 
+/* TIM8 init function */
+static void MX_TIM8_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim8.Instance = TIM8;
+  htim8.Init.Prescaler = 799;
+  htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim8.Init.Period = 99;
+  htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim8.Init.RepetitionCounter = 0;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim8, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
 /* USART1 init function */
 static void MX_USART1_UART_Init(void)
 {
@@ -992,7 +1052,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		leftu = (int)(__HAL_TIM_GET_COUNTER(&htim2))*fre*98/(160*8);
 		__HAL_TIM_SET_COUNTER(&htim2, 0);
 		__HAL_TIM_SET_COUNTER(&htim3, 0);	
-	}	
+	}
+	if (htim->Instance==TIM8){
+		TimeUp=1;
+	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
