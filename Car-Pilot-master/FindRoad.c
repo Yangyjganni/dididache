@@ -397,7 +397,7 @@ int inMap(short x, short y)
 int hasVisited(short x, short y, int lo, int hi, short *vis_map_x, short *vis_map_y)
 {
     for(int i = lo; i <= hi; ++i)
-        if(vis_map_x[i] == x && vis_map_y == y)
+        if(vis_map_x[i] == x && vis_map_y[i] == y)
             return 1;
     return 0;
 }

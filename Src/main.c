@@ -45,7 +45,7 @@
 #include "FindRoad.h"
 #include "decodemessage.h"
 #include "utils.h"
-#define zhushi
+// #define zhushi
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -89,7 +89,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN 0 */
 uint8_t receive[1];
-uint8_t temptext[75];
+uint8_t temptext[150];
 volatile uint8_t text[70];
 volatile uint8_t refreshed=0;
 int current=0;  //position of the newest data in text[]
@@ -98,6 +98,8 @@ volatile uint8_t pirefreshed=0;
 uint8_t fre=10;  //锟斤拷锟斤拷锟斤拷频锟斤拷
 volatile int leftu=0,rightu=0;  //锟斤拷前锟劫讹拷(pwm锟斤拷示)
 volatile uint8_t TimeUp=0;
+short _angle=-1; //全局维护小车角度
+uint8_t maxn;
 
 struct _vector{
 	int x,y;
@@ -284,6 +286,7 @@ int main(void)
 	MessageInfo* message=(MessageInfo*)malloc(sizeof(MessageInfo));
 	CarMove* carmove=(CarMove*)malloc(sizeof(CarMove));
 	uint8_t isA=(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_2)?1:0);
+	isA=1;
 	
 	int x[5],y[5];  //current and previous position
 	for (int i=0;i<5;i++){
@@ -344,16 +347,18 @@ int main(void)
 	HAL_UART_Transmit(&huart2,"AT+RST\r\n",8,100);
 	HAL_UART_Transmit(&huart3,"AT+RST\r\n",8,100);
 	HAL_Delay(3000);
-	/*
+	
 	HAL_UART_Transmit(&huart2,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
 	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"EDC20\",\"12345678\"\r\n",30,100);
-	*/
+	HAL_Delay(5000);
+	/*
 	HAL_UART_Transmit(&huart2,"AT+CWJAP=\"sta-dpi\",\"IloveDPI\"\r\n",40,100);
 	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"sta-dpi\",\"IloveDPI\"\r\n",40,100);
 	HAL_Delay(8000);
+	*/
 	
-  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.100\",20000\r\n",41,100);
-	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.100\",20000\r\n",41,100);
+  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.116\",20000\r\n",41,100);
+	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.116\",20000\r\n",41,100);
 	HAL_Delay(3000);
 #endif
   HAL_TIM_Base_Start_IT(&htim1);
@@ -369,23 +374,35 @@ int main(void)
 		myvector->x=0;
 		myvector->y=0;
 		myvector->angle=0;
+		_angle=0;
 	}
 	else
 	{
 		myvector->x=0;
 		myvector->y=0;
 		myvector->angle=0;
+		_angle=0;
 	}
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	message->my_x=67;message->my_y=189;
-	message->oppo_x=0;message->oppo_y=0;message->passengerNum=2;
-	message->pass_status[0]=0;message->xs_pos[0]=113;message->ys_pos[0]=127;message->xe_pos[0]=218;
-	message->ye_pos[0]=206;message->pass_status[1]=0;message->xs_pos[1]=31;message->ys_pos[1]=49;
-	message->xe_pos[1]=241;message->ye_pos[1]=69;
-  while (1)
+	#ifdef zhushi
+	refreshed=1;
+	message->my_x=226;message->my_y=4;
+	message->oppo_x=0;message->oppo_y=0;message->passengerNum=5;
+	message->pass_status[0]=0;message->xs_pos[0]=9;message->ys_pos[0]=163;message->xe_pos[0]=94;
+	message->ye_pos[0]=83;
+	message->pass_status[1]=0;message->xs_pos[1]=41;message->ys_pos[1]=12;
+	message->xe_pos[1]=146;message->ye_pos[1]=30;
+	message->pass_status[2]=0;message->xs_pos[2]=105;message->ys_pos[2]=238;
+	message->xe_pos[2]=174;message->ye_pos[2]=149;
+	message->pass_status[3]=0;message->xs_pos[3]=238;message->ys_pos[3]=105;
+	message->xe_pos[3]=149;message->ye_pos[3]=174;
+	message->pass_status[4]=0;message->xs_pos[4]=8;message->ys_pos[4]=225;
+	message->xe_pos[4]=113;message->ye_pos[4]=96;
+  #endif
+	while (1)
   {
   /* USER CODE END WHILE */
 
@@ -400,46 +417,25 @@ int main(void)
 			pirefreshed=0;
 		}
 		uint8_t pretype=carmove->type;
-		if (1||refreshed==1){
-			//msgrefresh((char*)text,message,isA);
-			refreshed=0;
-			/*
+		if (refreshed==1){
+			#ifndef zhushi
+			msgrefresh((char*)text,message,isA);
+			printf("isA=%d",isA);
 			printf("\nmy_x=%d my_y=%d oppo_x=%d oppo_y=%d passengerNum=%d\n",
 			message->my_x,message->my_y,message->oppo_x,message->oppo_y,message->passengerNum);
 			for (int i=0;i<message->passengerNum;i++){
 				printf("pass_status=%hhd xs_pos=%d ys_pos=%d xe_pos=%d ye_pos=%d\n",
 				message->pass_status[i],message->xs_pos[i],message->ys_pos[i],message->xe_pos[i],message->ye_pos[i]);
 			}
-			*/
-			for (int i=4;i>0;i--){
-				x[i]=x[i-1];
-				y[i]=y[i-1];
-			}
-			x[0]=message->my_x;
-			y[0]=message->my_y;
-			
-			short _angle;
-			uint8_t maxn=4;
-			while(x[maxn]==0) maxn--;
-			maxn++;
-			if (maxn==0||maxn==1) _angle = -1;
-			else _angle = cal_myangle(x,y,maxn);
-			_angle=-1;
+			#endif
 			
 			*carmove=GetNextMoveWithAngle(*message,_angle);
+			#ifdef zhushi
 			message->my_x = carmove->dest_x;
 			message->my_y = carmove->dest_y;
-			if (carmove->type==0){
-				printf("type=0");
-			}
-			if (carmove->type==1){
-				printf("type=1 x=%d y=%d dis=%f",carmove->dest_x,carmove->dest_y, carmove->dis);
-			}
-			if (carmove->type==2){
-				printf("type=2 angle=%d",carmove->angle);
-			}
-			//carmove->type=1;
-
+			#endif
+			printf("type=%d angle=%d x=%d y=%d",carmove->type,carmove->angle,carmove->dest_x,carmove->dest_y);
+			
 			if (carmove->type==0){
 				go(0,0);
 			}
@@ -466,7 +462,21 @@ int main(void)
 					for (int i=0;i<5;i++){
 						x[i]=0;y[i]=0;
 					}
-				}			
+				}		
+				
+				refreshed=0;		
+				for (int i=4;i>0;i--){
+					x[i]=x[i-1];
+					y[i]=y[i-1];
+				}
+				x[0]=message->my_x;
+				y[0]=message->my_y;
+			
+				maxn=4;
+				while(x[maxn]==0) maxn--;
+				maxn++;
+				if (maxn==0||maxn==1) ;
+				else _angle = cal_myangle(x,y,maxn);
 			}
 
 			if(carmove->type==2 || carmove->type==4)//turning without camera
@@ -484,6 +494,7 @@ int main(void)
 				type2_angle=0;
 				#ifndef zhushi
 				HAL_TIM_Base_Start_IT(&htim8);
+				
 				if(carmove->angle>=0){
 					go(type2_b,type2_a);
 					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
@@ -498,7 +509,7 @@ int main(void)
 					go(type2_a,type2_b);
 					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
 						if (TimeUp==0) continue;
-						TimeUp=0; 
+						TimeUp=0;
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
 						type2_angle+=angle_speed*0.01;
@@ -506,13 +517,18 @@ int main(void)
 				}
 				HAL_TIM_Base_Stop_IT(&htim8);
 				#endif
+				
+				#define ABS(x) ((x)>0?(x):(-(x)))
+				if(carmove->angle>0) _angle-=(float)ABS(type2_angle);
+				else _angle+=(float)(-ABS(type2_angle));
+				#undef ABS
+				
 				go(0,0);
 			}
-//闇?璋冩暣閲忥細radius1,radius2,浠ュ強鍏跺搴旂殑鍗犵┖姣?,feedback,绉垎闂撮殧
-			
+//闇?璋冩暣閲忥細radius1,radius2,浠ュ強鍏跺搴旂殑鍗犵┖姣?,feedback,绉垎闂撮殧	
 			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
 			{
-				#ifndef zhushi
+				#ifdef zhushi
 				continue;
 				#endif
 				int8_t i,max_i=-1; //max_i表示在x和y数组中存储了数据的最大下标
@@ -544,6 +560,9 @@ int main(void)
 						if(max_i<4) max_i++;
 						x[0]=message->my_x;
 						y[0]=message->my_y;
+						
+						if(max_i>=2) _angle=cal_myangle(x,y,max_i+1);
+						// else _angle=-1.0;
 											
 						if(4*x[0]+3*y[0] >= 1090) //进入第二段圆弧
 						{
@@ -610,7 +629,8 @@ int main(void)
 						if(max_i<4) max_i++;
 						x[0]=message->my_x;
 						y[0]=message->my_y;
-						if(max_i>=1) myvector->angle=cal_myangle(x,y,max_i);
+						if(max_i>=2) _angle=cal_myangle(x,y,max_i+1);
+						// else angle=-1.0;
 						
 						if(3*x[0]+4*y[0] <= 1090) //进入第二段圆弧
 						{
@@ -1030,12 +1050,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	if (huart->Instance==USART2){
 		temptext[current]=receive[0];
 		current++;
-		if (temptext[current-1]==0x0A && temptext[current-2]==0x0D){
+		if (temptext[current-1]==0x0A && temptext[current-2]==0x0D && current>=64){
 			for(int i=0;i<64;i++){
 				text[i]=temptext[current-64+i];
 			}
 		  current=0;
 			refreshed=1;
+			
 		}
 		HAL_UART_Receive_IT(&huart2,receive,1);
 	}
