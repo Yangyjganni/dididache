@@ -574,10 +574,15 @@ CarMove GetNextMove(MessageInfo info)
     int onCarPass = -1, oppoHasPass = -1;
     for(int i = 0; i < info.passengerNum; ++i) {
         if(info.pass_status[i] == 1) {
-            onCarPass = i;
+            if(info.is_a)
+                onCarPass = i;
+            else oppoHasPass = i;
         }
-        else if(info.pass_status[i] == 2)
-            oppoHasPass = i;
+        else if(info.pass_status[i] == 2) {
+            if(info.is_a)
+                oppoHasPass = i;
+            else onCarPass = i;
+        }
     }
     if(onCarPass != -1) {
         return get_next_move(info.my_x, info.my_y, info.xe_pos[onCarPass], info.ye_pos[onCarPass]);
@@ -616,7 +621,7 @@ CarMove GetNextMoveWithAngle(MessageInfo info, short curAngle)
             oppoHasPass = i;
     }
     if(onCarPass != -1) {
-        return get_next_move(info.my_x, info.my_y, info.xe_pos[onCarPass], info.ye_pos[onCarPass]);
+        return get_next_move_with_angle(info.my_x, info.my_y, info.xe_pos[onCarPass], info.ye_pos[onCarPass], curAngle);
     }
     else {
         short minDis = SHORT_INF;
