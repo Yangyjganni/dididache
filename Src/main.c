@@ -287,6 +287,7 @@ int main(void)
 	CarMove* carmove=(CarMove*)malloc(sizeof(CarMove));
 	uint8_t isA=(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_2)?1:0);
 	isA=1;
+	message->is_a =isA;
 	
 	int x[5],y[5];  //current and previous position
 	for (int i=0;i<5;i++){
