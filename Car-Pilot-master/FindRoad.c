@@ -232,6 +232,9 @@ int isRoundAbout(int x1, int y1, int x2, int y2)
 
 CarMove coreGetCarMove(int x1, int y1, int x2, int y2, short angle1, short angle2)
 {
+#ifdef PRINT_INFO
+		printf("core GetCarMove from (%d, %d) to (%d, %d) angle1: %d, angle2: %d \n",x1, y1, x2, y2, angle1, angle2);
+#endif
     short delta_angle = angle2 - angle1, turn_angle = 0;
     // int direction = 0;
     float moveDis = 0, turn_r = 0;
@@ -302,8 +305,12 @@ CarMove coreGetCarMove(int x1, int y1, int x2, int y2, short angle1, short angle
  */
 CarMove getCarMoveFromPoints(int point1, int point2)
 {
+
     short angle1 = points_angle[point1 - 1], angle2 = points_angle[point2 - 1];
     int x1 = points_x[point1 - 1], x2 = points_x[point2 - 1], y1 = points_y[point1 - 1], y2 = points_y[point2 - 1];
+#ifdef PRINT_INFO
+		printf("get carMove from point index %d (%d, %d), point %d (%d, %d) ", point1, x1, y1, point2, x2, y2);
+#endif
     return coreGetCarMove(x1, y1, x2, y2, angle1, angle2);
 }
 
@@ -381,10 +388,14 @@ int getNearestPoint(int x1, int y1, int edgeIndex)
 MoveList find_road_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curAngle)
 {
 #ifdef PRINT_INFO
-    printf("begin find_road \n");
+    printf("begin find_road from (%d, %d) to (%d, %d) cur Angle %d\n", st_x, st_y, ed_x, ed_y, curAngle);
 #endif
     int be_edge_index = use_map[st_x][st_y], ed_edge_index = use_map[ed_x][ed_y];
-    int s1 = getNearestPoint(st_x, st_y, be_edge_index), s2 = e_be[ed_edge_index - 1];
+
+		int s1 = getNearestPoint(st_x, st_y, be_edge_index), s2 = e_be[ed_edge_index - 1];
+#ifdef PRINT_INFO
+		printf("be_edge_index %d ed_edge_index %d s1 index %d, s2 index %d \n", be_edge_index, ed_edge_index, s1, s2);
+#endif
     int haveFirstMove = 0, haveLastMove = 0;
     short angle1, angle2;
     MoveList moveList;
@@ -399,7 +410,10 @@ MoveList find_road_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curA
         angle2 = points_angle[e_be[ed_edge_index - 1] - 1];
     else angle2 = points_angle[e_ed[ed_edge_index - 1] - 1];
     if(be_edge_index == ed_edge_index || getDis(st_x, st_y, ed_x, ed_y) <= MIN_DIS) {
-        CarMove onlyMove = coreGetCarMove(st_x, st_y, ed_x, ed_y, angle1, angle2);
+#ifdef PRINT_INFO
+				printf("prepare to get only car Move from (%d, %d) to (%d, %d) ", st_x, st_y, ed_x, ed_y);
+#endif
+				CarMove onlyMove = coreGetCarMove(st_x, st_y, ed_x, ed_y, angle1, angle2);
         moveList = initMoveList(1);
         moveList.data[0] = onlyMove;
     }
@@ -407,10 +421,16 @@ MoveList find_road_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curA
         CarMove firstMove, lastMove;
         if (getDis(st_x, st_y, points_x[s1 - 1], points_y[s1 - 1]) > 5) {
             haveFirstMove = 1;
+#ifdef PRINT_INFO
+				printf("prepare to get first car Move from (%d, %d) to (%d, %d) ", st_x, st_y, points_x[s1 - 1], points_y[s1 - 1]);
+#endif					
             firstMove = coreGetCarMove(st_x, st_y, points_x[s1 - 1], points_y[s1 - 1], angle1, points_angle[s1 - 1]);
         }
         if (getDis(ed_x, ed_y, points_x[s2 - 1], points_y[s2 - 1]) > 5) {
             haveLastMove = 1;
+#ifdef PRINT_INFO
+				printf("prepare to get last car Move from (%d, %d) to (%d, %d) ", points_x[s2 - 1], points_y[s2 - 1], ed_x, ed_y);
+#endif
             lastMove = coreGetCarMove(points_x[s2 - 1], points_y[s2 - 1], ed_x, ed_y, points_angle[s2 - 1], angle2);
         }
 #ifdef PRINT_INFO
