@@ -59,25 +59,25 @@ void testDecodeMessage()
 {
     MessageInfo msg;
     CarMove move;
-    msg.my_x = 67, msg.my_y = 189;
-    msg.oppo_x = 0, msg.oppo_y = 0;
-    msg.passengerNum = 2;
+    msg.my_x = 226, msg.my_y = 4;
+    msg.oppo_x = 205, msg.oppo_y = 215;
+    msg.passengerNum = 5;
     memset(msg.pass_status, 0, 8);
     msg.pass_status[2] = 0;
-    msg.xs_pos[0] = 160, msg.ys_pos[0] = 177;
-    msg.xe_pos[0] = 218, msg.ye_pos[0] = 206;
+    msg.xs_pos[0] = 9, msg.ys_pos[0] = 163;
+    msg.xe_pos[0] = 94, msg.ye_pos[0] = 83;
 
-    msg.xs_pos[1] = 31, msg.ys_pos[1] = 49;
-    msg.xe_pos[1] = 241, msg.ye_pos[1] = 69;
+    msg.xs_pos[1] = 41, msg.ys_pos[1] = 12;
+    msg.xe_pos[1] = 146, msg.ye_pos[1] = 30;
 
-    msg.xs_pos[2] = 205, msg.ys_pos[2] = 239;
-    msg.xe_pos[2] = 186, msg.ye_pos[2] = 182;
+    msg.xs_pos[2] = 105, msg.ys_pos[2] = 238;
+    msg.xe_pos[2] = 174, msg.ye_pos[2] = 149;
 
-    msg.xs_pos[3] = 239, msg.ys_pos[3] = 205;
-    msg.xe_pos[3] = 182, msg.ye_pos[3] = 186;
+    msg.xs_pos[3] = 238, msg.ys_pos[3] = 105;
+    msg.xe_pos[3] = 149, msg.ye_pos[3] = 174;
 
-    msg.xs_pos[4] = 257, msg.ys_pos[4] = 133;
-    msg.xe_pos[4] = 92, msg.ye_pos[4] = 254;
+    msg.xs_pos[4] = 8, msg.ys_pos[4] = 225;
+    msg.xe_pos[4] = 113, msg.ye_pos[4] = 96;
     while(1) {
 
         move = GetNextMoveWithAngle(msg, -1);

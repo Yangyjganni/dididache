@@ -121,9 +121,9 @@ EdgeList dijkstra(int st, int ed)
 {
 	
     initDis();
-		#ifdef PRINT_INFO
-		printf("after init dis in dijkstra\n");
-		#endif
+#ifdef PRINT_INFO
+    printf("after init dis in dijkstra\n");
+#endif
     int closestIndex = 0;
     int n = max_points_num;
     short tempMinDis;
@@ -385,12 +385,76 @@ int getNearestPoint(int x1, int y1, int edgeIndex)
     return _ed;
 }
 
+int inMap(short x, short y)
+{
+    if(x >= 0 && y >= 0 && x < map_width && y < map_width)
+        return 1;
+    return 0;
+}
+
+#define vis_map_len 400
+
+int hasVisited(short x, short y, int lo, int hi, short *vis_map_x, short *vis_map_y)
+{
+    for(int i = lo; i <= hi; ++i)
+        if(vis_map_x[i] == x && vis_map_y == y)
+            return 1;
+    return 0;
+}
+
+int findNearsetEdgeIndex(int x1, int y1)
+{
+    const int queue_len = 100;
+    static short p_queue_x[queue_len], p_queue_y[queue_len];
+    short ux , uy;
+    const short xx[4] = {-1, 0, 1, 0}, yy[4] = {0, 1, 0, -1};
+    int h = 0, t = 1;
+    int map_lo = 0, map_hi = -1;
+    int findFlag = 0, foundindex = 0;
+    static short vis_map_x[vis_map_len], vis_map_y[vis_map_len];
+    p_queue_x[h] = (short)x1, p_queue_y[h] = (short)y1;
+    ++map_hi;
+    vis_map_x[map_hi] = x1, vis_map_y[map_hi] = y1;
+    while(h < t) {
+        if(findFlag)
+            break;
+        ux = p_queue_x[h], uy = p_queue_y[h];
+        h++;
+        for(int i = 0; i < 4; ++i) {
+            short temp_x = ux + xx[i], temp_y = uy + yy[i];
+            if(inMap(temp_x, temp_y) && !hasVisited(temp_x, temp_y, map_lo, map_hi, vis_map_x, vis_map_y)) {
+                if(use_map[temp_x][temp_y] != 0) {
+                    findFlag = 1;
+                    foundindex = use_map[temp_x][temp_y];
+                    break;
+                }
+                ++map_hi;
+                vis_map_x[map_hi] = temp_x, vis_map_y[map_hi] = temp_y;
+                p_queue_x[t] = temp_x, p_queue_y[t] = temp_y;
+                ++t;
+            }
+        }
+    }
+    if(findFlag)
+        return foundindex;
+    return 0;
+}
+
+
 MoveList find_road_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curAngle)
 {
 #ifdef PRINT_INFO
     printf("begin find_road from (%d, %d) to (%d, %d) cur Angle %d\n", st_x, st_y, ed_x, ed_y, curAngle);
 #endif
     int be_edge_index = use_map[st_x][st_y], ed_edge_index = use_map[ed_x][ed_y];
+    if(be_edge_index == 0)
+        be_edge_index = findNearsetEdgeIndex(st_x, st_y);
+    if(be_edge_index == 0)
+        printf("Error! cannot find road in (%d, %d) ", st_x, st_y);
+    if(ed_edge_index == 0)
+        ed_edge_index = findNearsetEdgeIndex(ed_x, ed_y);
+    if(ed_edge_index == 0)
+        printf("Error! cannot find road in (%d, %d) ", ed_x, ed_y);
 
 		int s1 = getNearestPoint(st_x, st_y, be_edge_index), s2 = e_be[ed_edge_index - 1];
 #ifdef PRINT_INFO
