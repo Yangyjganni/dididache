@@ -59,14 +59,14 @@ void testDecodeMessage()
 {
     MessageInfo msg;
     CarMove move;
-    msg.my_x = 226, msg.my_y = 4;
-    msg.oppo_x = 205, msg.oppo_y = 215;
-    msg.passengerNum = 5;
+    msg.my_x = 187, msg.my_y = 58;
+    msg.oppo_x = 17, msg.oppo_y = 270;
+    msg.passengerNum = 2;
     memset(msg.pass_status, 0, 7);
     msg.is_a = 1;
     msg.pass_status[2] = 0;
-    msg.xs_pos[0] = 9, msg.ys_pos[0] = 163;
-    msg.xe_pos[0] = 94, msg.ye_pos[0] = 83;
+    msg.xs_pos[0] = 54, msg.ys_pos[0] = 170;
+    msg.xe_pos[0] = 117, msg.ye_pos[0] = 133;
 
     msg.xs_pos[1] = 41, msg.ys_pos[1] = 12;
     msg.xe_pos[1] = 146, msg.ye_pos[1] = 30;
