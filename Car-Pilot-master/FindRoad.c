@@ -27,6 +27,18 @@ Edge getEdge(int a, int b, int w)
     return tempEdge;
 }
 
+RealEdge getRealEdge(int x1, int y1, int x2, int y2)
+{
+    RealEdge tempEdge;
+    tempEdge.x1 = x1, tempEdge.y1 = y1, tempEdge.x2 = x2, tempEdge.y2 = y2;
+    return tempEdge;
+}
+
+RealEdge getRealEdgeFromEdge(Edge *edge)
+{
+    return getRealEdge(points_x[edge->a - 1], points_y[edge->a - 1], points_x[edge->b - 1], points_x[edge->b - 1]);
+}
+
 
 
 void addEdge(int a, int b, int w)
@@ -46,6 +58,18 @@ EdgeList initEdgeList(int num)
     return tempList;
 }
 
+REdgeList initREdgeList(int num)
+{
+    REdgeList tempList;
+    static int edgePoolTop = 0;
+#ifdef PRINT_INFO
+    printf("prepare to malloc %d Edge total %lu Bytes \n", num, num * sizeof(Edge) );
+#endif
+    tempList.data = (RealEdge*)malloc(num * sizeof(RealEdge));
+    tempList.num = num;
+    return tempList;
+}
+
 void deleteEdgeList(EdgeList *list)
 {
     if(list) {
@@ -56,6 +80,15 @@ void deleteEdgeList(EdgeList *list)
     }
 }
 
+void deleteREdgeList(REdgeList *list)
+{
+    if(list) {
+        if(list->data)
+            free(list->data);
+        list->data = NULL;
+        list->num = 0;
+    }
+}
 
 
 MoveList initMoveList(int num)
@@ -441,6 +474,22 @@ int findNearsetEdgeIndex(int x1, int y1)
 }
 
 
+
+CarMove getMoveFromEdges(RealEdge *edge1, RealEdge *edge2)
+{
+    int x1 = edge1->x2 - edge1->x1, x2 = edge2->x2 - edge2->x1;
+    int y1 = edge1->y2 - edge1->y1, y2 = edge2->y2 - edge2->y1;
+    int cross = x1 * y2 - x2 * y1;
+    float angle = asinf(cross) * 180.0f / (float)M_PI;
+    CarMove carMove;
+    carMove.start_x = x1, carMove.start_y = y1;
+    carMove.dest_x = x1, carMove.dest_y = y1;
+    carMove.dis = 0.0f;
+    carMove.angle = (short)angle;
+    carMove.r = 0.00001;
+    return carMove;
+}
+
 MoveList find_road_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curAngle)
 {
 #ifdef PRINT_INFO
@@ -477,25 +526,28 @@ MoveList find_road_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curA
 #ifdef PRINT_INFO
 				printf("prepare to get only car Move from (%d, %d) to (%d, %d) ", st_x, st_y, ed_x, ed_y);
 #endif
-				CarMove onlyMove = coreGetCarMove(st_x, st_y, ed_x, ed_y, angle1, angle2);
+		CarMove onlyMove = coreGetCarMove(st_x, st_y, ed_x, ed_y, angle1, angle1);
         moveList = initMoveList(1);
         moveList.data[0] = onlyMove;
     }
     else {
         CarMove firstMove, lastMove;
+        RealEdge firstEdge, lastEdge;
         if (getDis(st_x, st_y, points_x[s1 - 1], points_y[s1 - 1]) > 5) {
             haveFirstMove = 1;
 #ifdef PRINT_INFO
 				printf("prepare to get first car Move from (%d, %d) to (%d, %d) ", st_x, st_y, points_x[s1 - 1], points_y[s1 - 1]);
 #endif					
-            firstMove = coreGetCarMove(st_x, st_y, points_x[s1 - 1], points_y[s1 - 1], angle1, points_angle[s1 - 1]);
+            firstEdge = getRealEdge(st_x, st_y, points_x[s1 - 1], points_y[s1 - 1]);
+				//firstMove = coreGetCarMove(st_x, st_y, points_x[s1 - 1], points_y[s1 - 1], angle1, points_angle[s1 - 1]);
         }
         if (getDis(ed_x, ed_y, points_x[s2 - 1], points_y[s2 - 1]) > 5) {
             haveLastMove = 1;
 #ifdef PRINT_INFO
 				printf("prepare to get last car Move from (%d, %d) to (%d, %d) ", points_x[s2 - 1], points_y[s2 - 1], ed_x, ed_y);
 #endif
-            lastMove = coreGetCarMove(points_x[s2 - 1], points_y[s2 - 1], ed_x, ed_y, points_angle[s2 - 1], angle2);
+				lastEdge = getRealEdge(points_x[s2 - 1], points_y[s2 - 1], ed_x, ed_y);
+            //lastMove = coreGetCarMove(points_x[s2 - 1], points_y[s2 - 1], ed_x, ed_y, points_angle[s2 - 1], angle2);
         }
 #ifdef PRINT_INFO
         printf("prepare dijkstra \n");
@@ -508,12 +560,19 @@ MoveList find_road_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curA
 #ifdef PRINT_INFO
         printf("after initMoveList \n");
 #endif
-        if (haveFirstMove == 1)
-            moveList.data[0] = firstMove;
-        if (haveLastMove == 1)
-            moveList.data[moveList.num - 1] = lastMove;
-        for (int i = 0; i < edgeList.num; ++i) {
-            moveList.data[i + haveFirstMove] = getCarMoveFromPoints(edgeList.data[i].a, edgeList.data[i].b);
+
+        if (haveFirstMove == 1) {
+            RealEdge tempEdge = getRealEdge(points_x[edgeList.data[0].a], points_y[edgeList.data[0].a], points_x[edgeList.data[0].b], points_y[edgeList.data[0].b]);
+            moveList.data[0] = getMoveFromEdges(&firstEdge, &tempEdge);
+        }
+        if (haveLastMove == 1) {
+            RealEdge tempEdge = getRealEdge(points_x[edgeList.data[edgeList.num - 1].a], points_y[edgeList.data[edgeList.num - 1].a], points_x[edgeList.data[edgeList.num - 1].b], points_y[edgeList.data[edgeList.num - 1].b]);
+            moveList.data[moveList.num - 1] = getMoveFromEdges(&tempEdge, &lastEdge);
+        }
+        for (int i = 0; i < edgeList.num - 1; ++i) {
+            RealEdge edge1 = getRealEdgeFromEdge(edgeList.data + i);
+            RealEdge edge2 = getRealEdgeFromEdge(edgeList.data + i + 1);
+            moveList.data[i + haveFirstMove] = getMoveFromEdges(&edge1, &edge2);
         }
 #ifdef PRINT_INFO
         printf("before delete EdgeList \n");

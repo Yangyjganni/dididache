@@ -9,7 +9,7 @@
 //#define PRINT_INFO
 
 #ifndef MY_PI
-#define MY_PI 3.141592654F
+#define MY_PI 3.141592654f
 #endif
 
 #define CARMOVE_POOL_LEN 100
@@ -50,6 +50,24 @@ struct _edge_list{
     int num;
     Edge* data;
 };
+
+
+
+struct _real_edge{
+    int x1, y1, x2, y2;
+};
+
+typedef struct _real_edge RealEdge;
+
+
+
+struct _r_edge_list{
+    int num;
+    RealEdge* data;
+};
+
+typedef struct _r_edge_list REdgeList;
+
 
 /**
  * 通信协议提取信息。
