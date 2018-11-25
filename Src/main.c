@@ -45,7 +45,7 @@
 #include "FindRoad.h"
 #include "decodemessage.h"
 #include "utils.h"
-// #define zhushi
+//#define zhushi
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -74,10 +74,10 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
-static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM8_Init(void);
+static void MX_I2C1_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -92,6 +92,7 @@ uint8_t receive[1];
 uint8_t temptext[150];
 volatile uint8_t text[70];
 volatile uint8_t refreshed=0;
+volatile uint8_t bluetooth=0;
 int current=0;  //position of the newest data in text[]
 uint8_t pitext[5];
 volatile uint8_t pirefreshed=0;
@@ -134,15 +135,19 @@ short cal_myangle(int* x,int* y,int maxn){
 		yi += y[i];
 		xy += x[i] * y[i];
 	}
-	if (xi * xi - x2 * maxn==0) return 90;
+	if (xi * xi - x2 * maxn==0) {
+		printf("!!0");
+		if (yi * xi - xy * maxn>0) _angle=-90;
+		else _angle=90;
+	}
 	else{
 		k = (yi * xi - xy * maxn)*1.0 / (xi * xi - x2 * maxn);
 		//printf("\nk=%f\n",k);
 		//printf("\natan(k)=%f",atan(k));
-		if (x[0]-x[maxn-1]>=0) _angle = atan(k)*180/3.1416;
+		if (x[0]-x[maxn-1]>=0) _angle = (short)(atan(k)*180/3.1416);
 		else{
-			if (y[0]-y[maxn-1]>=0) _angle = atan(k)*180/3.1416 + 180;
-			else _angle = atan(k)*180/3.1416 - 180;
+			if (y[0]-y[maxn-1]>=0) _angle = (short)(atan(k)*180/3.1416 + 180);
+			else _angle = (short)(atan(k)*180/3.1416 - 180);
 		}
 	}
 	if(_angle >= 360) _angle-= 360;
@@ -236,7 +241,6 @@ uint8_t Single_ReadI2C(uint8_t REG_Address) //REG_Address ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
 	return data;
 }
 
-
 uint16_t Get_MPU_Data(uint8_t REG_Address) //Òªï¿½ï¿½È¡ï¿½ï¿½2ï¿½Ö½Úµï¿½ï¿½ï¿½ï¿½ÝµÄ¸ï¿½ï¿½Ö½Úµï¿½Ö·
 {
 	uint8_t H,L;
@@ -244,7 +248,6 @@ uint16_t Get_MPU_Data(uint8_t REG_Address) //Òªï¿½ï¿½È¡ï¿½ï¿½2ï¿½Ö½Úµï¿½ï¿½ï¿½ï¿
 	L=Single_ReadI2C(REG_Address+1);
 	return ((uint16_t)H)*256+L;
 }
-
 
 void InitMPU6050()
 {
@@ -267,6 +270,9 @@ void InitMPU6050()
 	}
 	gyro_z_offset/=10;
 	printf("offset:%f",gyro_z_offset);
+	#ifdef zhushi
+	printf("\n%c",Single_ReadI2C(WHO_AM_I));
+	#endif
 	/*×¢ï¿½ï¿½MPU6050ï¿½ï¿½Ãµï¿½Ô­Ê¼ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½Î?0Ê±ï¿½ï¿½MPU6050ï¿½Ä¼Ä´ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²ï¿½Îª0ï¿½ï¿½ï¿½ï¿½
 	ï¿½ï¿½Í¨ï¿½ï¿½È¡ï¿½ï¿½ï¿½É´ï¿½Æ½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È»ï¿½ï¿½Ã¿ï¿½Î²ï¿½ï¿½ï¿½ï¿½ï¿½È¡Ô­Ê¼ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½È¥Æ«ï¿½ï¿½ï¿½ï¿½*/
 	
@@ -298,7 +304,7 @@ int main(void)
 	vector* desvector=(vector*)malloc(sizeof(vector)); 
 
 	int delta=0;
-	int leftV=90,rightV=90,leftv=0,rightv=0;  //V-Æ½ï¿½ï¿½ï¿½Ù¶ï¿½, v-ï¿½ï¿½°ï¿½ï¿½ïÇ¿½ï¿½ï¿½Ù¶ï¿½
+	int leftV=80,rightV=80,leftv=0,rightv=0;  //V-Æ½ï¿½ï¿½ï¿½Ù¶ï¿½, v-ï¿½ï¿½°ï¿½ï¿½ïÇ¿½ï¿½ï¿½Ù¶ï¿½
 	int leftpwm=0,rightpwm=0;  //ï¿½ï¿½Ç°pwm
 	
   /* USER CODE END 1 */
@@ -326,10 +332,10 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
-  MX_I2C1_Init();
   MX_USART3_UART_Init();
   MX_USART1_UART_Init();
   MX_TIM8_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 	setInitHandle(&huart3);
 	uint8_t a[]="--This is a test message.--\r\n";
@@ -337,6 +343,7 @@ int main(void)
 	InitMPU6050();
 	HAL_UART_Receive_IT(&huart1,pitext,4);
 #ifndef zhushi
+	/*
 	HAL_UART_Transmit(&huart3,"AT\r\n",4,100);
 	HAL_UART_Transmit(&huart2,"AT\r\n",4,100);
 	HAL_Delay(3000);
@@ -344,7 +351,7 @@ int main(void)
 	HAL_UART_Transmit(&huart2,"AT+CWMODE=3\r\n",13,100);
 	HAL_UART_Transmit(&huart3,"AT+CWMODE=3\r\n",13,100);
 	HAL_Delay(3000);
-  
+  */
 	HAL_UART_Transmit(&huart2,"AT+RST\r\n",8,100);
 	HAL_UART_Transmit(&huart3,"AT+RST\r\n",8,100);
 	HAL_Delay(3000);
@@ -357,9 +364,8 @@ int main(void)
 	HAL_UART_Transmit(&huart3,"AT+CWJAP=\"sta-dpi\",\"IloveDPI\"\r\n",40,100);
 	HAL_Delay(8000);
 	*/
-	
-  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.116\",20000\r\n",41,100);
-	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.116\",20000\r\n",41,100);
+  HAL_UART_Transmit(&huart2,"AT+CIPSTART=\"TCP\",\"192.168.1.134\",20000\r\n",41,100);
+	HAL_UART_Transmit(&huart3,"AT+CIPSTART=\"TCP\",\"192.168.1.134\",20000\r\n",41,100);
 	HAL_Delay(3000);
 #endif
   HAL_TIM_Base_Start_IT(&htim1);
@@ -367,15 +373,17 @@ int main(void)
 	HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
 	HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_2);
-	
 	HAL_UART_Receive_IT(&huart2,receive,1);
+	#ifdef zhushi
+	HAL_UART_Receive_IT(&huart3,receive,1);
+	#endif
 	
 	if(1==isA) 
 	{
 		myvector->x=0;
 		myvector->y=0;
 		myvector->angle=0;
-		_angle=0;
+		_angle=270;
 	}
 	else
 	{
@@ -388,8 +396,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	#ifdef zhushi
-	refreshed=1;
+	#ifdef zhushi2
 	message->my_x=226;message->my_y=4;
 	message->oppo_x=0;message->oppo_y=0;message->passengerNum=5;
 	message->pass_status[0]=0;message->xs_pos[0]=9;message->ys_pos[0]=163;message->xe_pos[0]=94;
@@ -403,23 +410,17 @@ int main(void)
 	message->pass_status[4]=0;message->xs_pos[4]=8;message->ys_pos[4]=225;
 	message->xe_pos[4]=113;message->ye_pos[4]=96;
   #endif
+#ifdef zhushi
+	int i=0;
+#endif
 	while (1)
   {
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-		if (pirefreshed==1){
-			if (pitext[0]==48){
-				delta = (pitext[1]-48)*100 + (pitext[2]-48)*10 + (pitext[3]-48);
-			}
-			else{
-				delta = -((pitext[1]-48)*100 + (pitext[2]-48)*10 + (pitext[3]-48));
-			}
-			pirefreshed=0;
-		}
 		uint8_t pretype=carmove->type;
-		if (refreshed==1){
-			#ifndef zhushi
+		#ifndef zhushi
+		if (refreshed==1){			
 			msgrefresh((char*)text,message,isA);
 			printf("isA=%d",isA);
 			printf("\nmy_x=%d my_y=%d oppo_x=%d oppo_y=%d passengerNum=%d\n",
@@ -428,110 +429,167 @@ int main(void)
 				printf("pass_status=%hhd xs_pos=%d ys_pos=%d xe_pos=%d ye_pos=%d\n",
 				message->pass_status[i],message->xs_pos[i],message->ys_pos[i],message->xe_pos[i],message->ye_pos[i]);
 			}
-			#endif
-			
-			*carmove=GetNextMoveWithAngle(*message,_angle);
-			#ifdef zhushi
-			message->my_x = carmove->dest_x;
-			message->my_y = carmove->dest_y;
-			#endif
-			printf("type=%d angle=%d x=%d y=%d",carmove->type,carmove->angle,carmove->dest_x,carmove->dest_y);
-			
-			if (carmove->type==0){
-				go(0,0);
-			}
-			if (carmove->type==1){  //go straight
-				if (delta>=0){
-					leftv = leftV - delta*0.08;
-					rightv = rightV - delta*0.08 - delta*0.1;
-				}
-				else{
-					leftv = leftV + delta*0.08 + delta*0.1;
-					rightv = rightV + delta*0.08;
-				}
-				//printf("leftv=%d rightv=%d",leftv,rightv);
-				leftpwm = leftv + (leftv - leftu)*0.5;
-				rightpwm = rightv + (rightv - rightu)*0.5;
-				if (leftpwm>100) leftpwm=100;
-				if (leftpwm<30) leftpwm=30;
-				if (rightpwm>100) rightpwm=100;
-				if (rightpwm<30) rightpwm=30;
-				//printf("leftpwm=%d rightpwm=%d",leftpwm,rightpwm);
-				go(leftpwm,rightpwm);
-				//calculate angle
-				if (pretype!=1){
-					for (int i=0;i<5;i++){
-						x[i]=0;y[i]=0;
-					}
-				}		
-				
-				refreshed=0;		
+			refreshed=0;
+		#else
+		if (1){
+		#endif
+			/*
+			if (pretype==1){
 				for (int i=4;i>0;i--){
 					x[i]=x[i-1];
 					y[i]=y[i-1];
 				}
 				x[0]=message->my_x;
 				y[0]=message->my_y;
-			
 				maxn=4;
 				while(x[maxn]==0) maxn--;
 				maxn++;
-				if (maxn==0||maxn==1) ;
-				else _angle = cal_myangle(x,y,maxn);
+				if (maxn>1) _angle = cal_myangle(x,y,maxn);
 			}
-
-			if(carmove->type==2 || carmove->type==4)//turning without camera
+			else{
+				if (pretype!=1){
+					for (int i=0;i<5;i++){
+						x[i]=0;y[i]=0;
+					}
+				}
+				_angle=-1;
+			}
+			*/
+		#ifndef zhushi
+			*carmove=GetNextMoveWithAngle(*message,_angle);
+		#endif
+			/*
+			message->my_x = carmove->dest_x;
+			message->my_y = carmove->dest_y;
+			*/
+		#ifndef zhushi
+			printf("myangle=%d\n",_angle);
+			if (carmove->type==1) printf("type=1 x=%d y=%d dist=%f",carmove->dest_x,carmove->dest_y,carmove->dis);
+			if (carmove->type==2) printf("type=2 angle=%d r=%f",carmove->angle,carmove->r);
+			if (carmove->type==3) printf("type=3");
+			if (carmove->type==4) printf("type=4 angle=%d r=%f",carmove->angle,carmove->r);
+		#endif
+		#ifdef zhushi
+			carmove->type=5;
+		#endif
+			if (carmove->type==0||bluetooth==0){
+				go(0,0);
+			}
+			if (carmove->type==1||bluetooth==1){  //go straight
+				if (pirefreshed==1){
+					printf("receive pi\n");
+					if (pitext[0]==48){
+						delta = (pitext[1]-48)*100 + (pitext[2]-48)*10 + (pitext[3]-48);
+					}
+					else{
+						delta = -((pitext[1]-48)*100 + (pitext[2]-48)*10 + (pitext[3]-48));
+					}
+					printf("delta=%d");
+					pirefreshed=0;
+					if (delta>=0){
+						leftv = leftV - delta*0.05;
+						rightv = rightV - delta*0.05 - delta*0.2;
+					}
+					else if(delta<0){
+						leftv = leftV + delta*0.05 + delta*0.2;
+						rightv = rightV + delta*0.05;
+					}						
+					leftpwm = (int)(leftv + (leftv - leftu*0.4)*0.5);
+					rightpwm = (int)(rightv + (rightv - rightu*0.4)*0.5);
+				}
+				else{
+					printf("no pi\n");
+					leftpwm = (int)(leftV + (rightu - leftu)*0.1);
+					rightpwm = (int)(rightV + (leftu - rightu)*0.1);
+				}
+				
+				if (leftpwm>100) leftpwm=100;
+				if (rightpwm>100) rightpwm=100;
+				if (leftpwm<60){
+					leftpwm=60;
+					if (rightpwm<85) rightpwm=85;
+				}					
+				if (rightpwm<60){ 
+					rightpwm=60;
+					if (leftpwm<85) leftpwm=85;
+				}
+				
+				#ifdef zhushi
+				i++;
+				if (i>2000){
+					printf("leftu=%d rightu=%d leftpwm=%d rightpwm=%d",leftu,rightu,leftpwm,rightpwm);
+					i=0;
+				}
+				#endif
+				
+				//go(leftpwm,rightpwm);
+				go(80,80);
+			}
+			else if(carmove->type==2 || carmove->type==4||bluetooth==2)//turning without camera
 			{
+				printf("bluetooth=%d",bluetooth);
 				//value
+				#ifdef zhushi
+				carmove->r=17;
+				carmove->angle=90;
+				#endif
 				double type2_angle=0;
-				int type2_radius1=15;
+				int type2_radius1=18;
 				int type2_radius2=28;
 				int type2_a,type2_b;
 				//radius
-				if(carmove->r<type2_radius1) {type2_a=30; type2_b=98;}
-				else if(carmove->r>type2_radius1) {type2_a=55; type2_b=98;}
+				if(carmove->r < type2_radius1) {type2_a=10; type2_b=98;}
+				else if(carmove->r > type2_radius1) {type2_a=55; type2_b=98;}
 				else {type2_a=85; type2_b=98;}
 				//angle
 				type2_angle=0;
-				#ifndef zhushi
 				HAL_TIM_Base_Start_IT(&htim8);
-				
+				HAL_Delay(1100);
 				if(carmove->angle>=0){
 					go(type2_b,type2_a);
-					while(type2_angle<carmove->angle && type2_angle>carmove->angle*-1){
+					
+					printf("enter turning loop");
+					
+					while(type2_angle < carmove->angle && type2_angle > carmove->angle*-1){
 						if (TimeUp==0) continue;
 						TimeUp=0;
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
-						type2_angle+=angle_speed*0.01;
-					}					
+						type2_angle+=angle_speed*0.1*1.1;
+						#ifdef zhushi
+						i++;
+						if (i>50){
+							printf("mpu_data=%d angle=%f",data,type2_angle);
+							i=0;
+						}
+						#endif
+					}
 				}
 				else {
 					go(type2_a,type2_b);
-					while(type2_angle<carmove->angle*-1 && type2_angle>carmove->angle){
+					while(type2_angle < carmove->angle*-1 && type2_angle > carmove->angle){
 						if (TimeUp==0) continue;
 						TimeUp=0;
 						data=Get_MPU_Data(GYRO_ZOUT_H);
 						angle_speed=(data-gyro_z_offset)*GYRO_SCALE_RANGE/32768.0;
-						type2_angle+=angle_speed*0.01;
+						type2_angle+=angle_speed*0.1*1.1;
 					}
 				}
-				HAL_TIM_Base_Stop_IT(&htim8);
-				#endif
+				_angle = (_angle - carmove->angle + 360)%360;				
 				
+				printf("finish turning loop");
+				go(0,0);
+				HAL_Delay(1100);
+				HAL_TIM_Base_Stop_IT(&htim8);
+				/*
 				#define ABS(x) ((x)>0?(x):(-(x)))
 				if(carmove->angle>0) _angle-=(float)ABS(type2_angle);
 				else _angle+=(float)(-ABS(type2_angle));
 				#undef ABS
-				
-				go(0,0);
+				*/
 			}
-//éœ?è°ƒæ•´é‡ï¼šradius1,radius2,ä»¥åŠå…¶å¯¹åº”çš„å ç©ºæ¯?,feedback,ç§¯åˆ†é—´éš”	
-			else if(carmove->type==3) //point 18b to 26s / point 27s to 19a
+			else if(carmove->type==3||bluetooth==3) //point 18b to 26s / point 27s to 19a
 			{
-				#ifdef zhushi
-				continue;
-				#endif
 				int8_t i,max_i=-1; //max_i±íÊ¾ÔÚxºÍyÊý×éÖÐ´æ´¢ÁËÊý¾ÝµÄ×î´óÏÂ±ê
 				for(i=0;i<=4;i++){
 					x[i]=0; y[i]=0;
@@ -554,6 +612,7 @@ int main(void)
 						if(0==refreshed)continue;
 						msgrefresh((char*)text,message,isA);
 						refreshed=0;
+						/*
 						for(i=4;i>0;i--){
 							x[i]=x[i-1];
 							y[i]=y[i-1];
@@ -564,7 +623,7 @@ int main(void)
 						
 						if(max_i>=2) _angle=cal_myangle(x,y,max_i+1);
 						// else _angle=-1.0;
-											
+						*/				
 						if(4*x[0]+3*y[0] >= 1090) //½øÈëµÚ¶þ¶ÎÔ²»¡
 						{
 							center_x=115;
@@ -623,6 +682,7 @@ int main(void)
 						if(0==refreshed)continue;
 						msgrefresh((char*)text,message,isA);
 						refreshed=0;
+						/*
 						for(i=4;i>0;i--){
 							x[i]=x[i-1];
 							y[i]=y[i-1];
@@ -632,7 +692,7 @@ int main(void)
 						y[0]=message->my_y;
 						if(max_i>=2) _angle=cal_myangle(x,y,max_i+1);
 						// else angle=-1.0;
-						
+						*/
 						if(3*x[0]+4*y[0] <= 1090) //½øÈëµÚ¶þ¶ÎÔ²»¡
 						{
 							center_x=290;
@@ -915,7 +975,7 @@ static void MX_TIM8_Init(void)
   htim8.Instance = TIM8;
   htim8.Init.Prescaler = 799;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 99;
+  htim8.Init.Period = 999;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
   htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -1048,6 +1108,14 @@ static void MX_GPIO_Init(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	UNUSED(huart);
+	#ifdef zhushi
+	if(huart->Instance==USART3){
+		refreshed=1;
+		bluetooth=receive[0]-48;
+		printf("%d",bluetooth);
+		HAL_UART_Receive_IT(&huart3,receive,1);
+	}
+	#endif
 	if (huart->Instance==USART2){
 		temptext[current]=receive[0];
 		current++;
@@ -1057,21 +1125,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			}
 		  current=0;
 			refreshed=1;
-			
+			#ifndef zhushi
+			bluetooth=0;
+			#endif
 		}
 		HAL_UART_Receive_IT(&huart2,receive,1);
 	}
 	if (huart->Instance==USART1){
 		pirefreshed=1;
-		HAL_UART_Receive_IT(&huart1,pitext,3);
+		HAL_UART_Receive_IT(&huart1,pitext,4);
 	}
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim->Instance==TIM1){
-		rightu = (int)(__HAL_TIM_GET_COUNTER(&htim3))*fre*98/(160*8);
-		leftu = (int)(__HAL_TIM_GET_COUNTER(&htim2))*fre*98/(160*8);
+		rightu = (int)(__HAL_TIM_GET_COUNTER(&htim2))*fre/8;
+		leftu = (int)(__HAL_TIM_GET_COUNTER(&htim3))*fre/8;
 		__HAL_TIM_SET_COUNTER(&htim2, 0);
 		__HAL_TIM_SET_COUNTER(&htim3, 0);	
 	}

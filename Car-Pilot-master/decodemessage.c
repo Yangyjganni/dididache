@@ -17,10 +17,10 @@ void msgrefresh(char* b, struct _MessageInfo* msg, uint8_t who){
 
  //AX AY BX BY
     if(who==1){
-        msg->my_x=((a[2]&(1<<7)) << 1)+a[5];
-        msg->my_y=((a[2]&(1<<6)) << 2) +a[6];
-        msg->oppo_x=((a[2]&(1<<5)) << 3)+a[7];
-        msg->oppo_y=((a[2]&(1<<4)) << 4)+a[8];
+        msg->my_x=(int)(0.9660*(((a[2]&(1<<7)) << 1)+a[5])+2.4317);
+        msg->my_y=(int)(0.9434*(((a[2]&(1<<6)) << 2) +a[6])+6.7847);
+        msg->oppo_x=(int)(0.9660*(((a[2]&(1<<5)) << 3)+a[7])+2.4317);
+        msg->oppo_y=(int)(0.9434*(((a[2]&(1<<4)) << 4)+a[8])+6.7847);
     }
     else{
          msg->oppo_x = ((a[2] & (1 << 7)) << 1) + a[5];

@@ -6,7 +6,7 @@
 #define FINDROAD_H
 
 //#define DEBUG_MODE
-#define PRINT_INFO
+//#define PRINT_INFO
 
 #ifndef MY_PI
 #define MY_PI 3.141592654F
