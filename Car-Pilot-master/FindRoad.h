@@ -7,6 +7,11 @@
 
 //#define DEBUG_MODE
 //#define PRINT_INFO
+#define TEST_TIME
+
+#ifdef TEST_TIME
+#include <time.h>
+#endif
 
 #ifndef MY_PI
 #define MY_PI 3.141592654f
@@ -104,6 +109,14 @@ CarMove get_next_move_with_angle(int st_x, int st_y, int ed_x, int ed_y, short c
 CarMove GetNextMove(MessageInfo info);
 
 CarMove GetNextMoveWithAngle(MessageInfo info, short curAngle);
+
+/**
+ * 获取一个CarMove组成的MoveList，从起点到终点，注意获得的MoveList的内存需要手动用deleteMoveList释放
+ * @param info
+ * @param curAngle
+ * @return MoveList
+ */
+MoveList GetMoveListWithAngle(MessageInfo info, short curAngle);
 
 #ifdef DEBUG_MODE
 void FindAllDis();

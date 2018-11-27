@@ -5,6 +5,14 @@
 #include "decodemessage.h"
 
 
+
+#define PRINT_TOTAL_TIME
+
+#ifdef PRINT_TOTAL_TIME
+#include <time.h>
+#endif
+
+
 void testDij()
 {
     printf("enter in two points\n");
@@ -59,7 +67,7 @@ void testDecodeMessage()
 {
     MessageInfo msg;
     CarMove move;
-    msg.my_x = 226, msg.my_y = 4;
+    msg.my_x = 183, msg.my_y = 64;
     msg.oppo_x = 205, msg.oppo_y = 215;
     msg.passengerNum = 5;
     memset(msg.pass_status, 0, 7);
@@ -71,18 +79,28 @@ void testDecodeMessage()
     msg.xs_pos[1] = 41, msg.ys_pos[1] = 12;
     msg.xe_pos[1] = 146, msg.ye_pos[1] = 30;
 
-    msg.xs_pos[2] = 105, msg.ys_pos[2] = 238;
+    msg.xs_pos[2] = 64, msg.ys_pos[2] = 84;
     msg.xe_pos[2] = 174, msg.ye_pos[2] = 149;
 
-    msg.xs_pos[3] = 238, msg.ys_pos[3] = 105;
+    msg.xs_pos[3] = 30, msg.ys_pos[3] = 40;
     msg.xe_pos[3] = 149, msg.ye_pos[3] = 174;
 
     msg.xs_pos[4] = 8, msg.ys_pos[4] = 225;
     msg.xe_pos[4] = 113, msg.ye_pos[4] = 96;
-    while(1) {
+    short my_angle = 270;
+    if(1) {
 
+#ifdef PRINT_TOTAL_TIME
+
+        clock_t t1 = clock();
+#endif
         move = GetNextMoveWithAngle(msg, -1);
         msg.my_x = move.dest_x, msg.my_y = move.dest_y;
+#ifdef PRINT_TOTAL_TIME
+        clock_t t2 = clock();
+        double dur_time = 1.0 * (t2 - t1)/CLOCKS_PER_SEC;
+        printf("use time %lf s \n", dur_time);
+#endif
         printf("\n");
         printf("type %d dest_x %d dest_y %d angle %d move.dis %f\n", move.type,  move.dest_x, move.dest_y,  move.angle, move.dis);
     }
