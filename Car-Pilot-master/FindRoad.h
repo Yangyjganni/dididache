@@ -7,7 +7,7 @@
 
 //#define DEBUG_MODE
 //#define PRINT_INFO
-#define TEST_TIME
+//#define TEST_TIME
 
 #ifdef TEST_TIME
 #include <time.h>
@@ -104,6 +104,12 @@ MoveList find_road(int st_x, int st_y, int ed_x, int ed_y);
 CarMove get_next_move(int st_x, int st_y, int ed_x, int ed_y);
 
 CarMove get_next_move_with_angle(int st_x, int st_y, int ed_x, int ed_y, short curAngle);
+
+/**
+ * 打印moveList的内容到标准输出
+ * @param moveList
+ */
+void print_move_list(MoveList moveList);
 
 
 CarMove GetNextMove(MessageInfo info);

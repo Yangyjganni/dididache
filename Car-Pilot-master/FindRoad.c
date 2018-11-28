@@ -178,7 +178,7 @@ EdgeList dijkstra(int st, int ed)
         }
         vis[closestIndex] = 1;
         for(int j = 1; j <= n; ++j) {
-            if (minDis[j] > tempMinDis + edgeMap[closestIndex][j]) {
+            if (!vis[j] && minDis[j] > tempMinDis + edgeMap[closestIndex][j]) {
                 minDis[j] = tempMinDis + edgeMap[closestIndex][j];
                 preNode[j] = closestIndex;
             }

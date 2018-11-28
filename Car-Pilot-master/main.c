@@ -67,6 +67,7 @@ void testDecodeMessage()
 {
     MessageInfo msg;
     CarMove move;
+    MoveList moveList;
     msg.my_x = 183, msg.my_y = 64;
     msg.oppo_x = 205, msg.oppo_y = 215;
     msg.passengerNum = 5;
@@ -94,15 +95,17 @@ void testDecodeMessage()
 
         clock_t t1 = clock();
 #endif
-        move = GetNextMoveWithAngle(msg, -1);
-        msg.my_x = move.dest_x, msg.my_y = move.dest_y;
+       moveList = GetMoveListWithAngle(msg, -1);
+       print_move_list(moveList);
+        //move = GetNextMoveWithAngle(msg, -1);
+       // msg.my_x = move.dest_x, msg.my_y = move.dest_y;
 #ifdef PRINT_TOTAL_TIME
         clock_t t2 = clock();
         double dur_time = 1.0 * (t2 - t1)/CLOCKS_PER_SEC;
         printf("use time %lf s \n", dur_time);
 #endif
         printf("\n");
-        printf("type %d dest_x %d dest_y %d angle %d move.dis %f\n", move.type,  move.dest_x, move.dest_y,  move.angle, move.dis);
+        //printf("type %d dest_x %d dest_y %d angle %d move.dis %f\n", move.type,  move.dest_x, move.dest_y,  move.angle, move.dis);
     }
 
 }
